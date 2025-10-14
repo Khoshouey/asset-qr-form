@@ -15,7 +15,12 @@
     box-shadow: 0 6px 20px rgba(0,0,0,0.1);
   }
   .logo { text-align: center; margin-bottom: 20px; }
-  .field { display: flex; justify-content: space-between; padding: 6px 10px; background: #f0f0f0; border-radius: 6px; margin-bottom: 8px; font-weight: 500; }
+  .fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .field { display: flex; justify-content: space-between; padding: 6px 10px; background: #f0f0f0; border-radius: 6px; font-weight: 500; }
   .field-label { color: #555; }
   .field-value { color: #111; font-weight: 700; }
   #error { color: red; text-align: center; margin-top: 20px; font-weight: bold; }
@@ -24,10 +29,10 @@
 <body>
 
 <div class="nameplate" id="nameplate">
-  <div class="logo"> 
- <img src="https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/13000668/570950_156125.png" alt="Caterpillar Logo" style="height:50px;">
+  <div class="logo">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/3/33/Caterpillar_logo.svg" alt="Caterpillar Logo" style="height:50px;">
   </div>
-  <div id="fields-container"></div>
+  <div class="fields-grid" id="fields-container"></div>
   <div id="error"></div>
 </div>
 
