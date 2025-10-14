@@ -1,91 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Asset QR Details</title>
+  <meta charset="UTF-8" />
+  <title>Asset Details Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Leaflet -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
-  <style>
-    #map { height: 100%; min-height: 400px; }
-  </style>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <style>#map {height:100%; min-height:400px;}</style>
 </head>
 <body class="bg-gray-100">
-  <div class="flex flex-col md:flex-row h-screen">
-    <!-- Left: Data -->
-    <div class="md:w-1/2 p-6 overflow-auto bg-white shadow-md">
-      <h1 class="text-2xl font-bold mb-4 text-blue-700">Asset Maintenance Details</h1>
-      <div id="data-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800"></div>
-    </div>
 
-    <!-- Right: Map -->
-    <div class="md:w-1/2 h-96 md:h-auto">
-      <div id="map"></div>
-    </div>
+<div class="flex flex-col md:flex-row h-screen">
+  <!-- Left: Data -->
+  <div class="md:w-1/2 p-6 overflow-auto bg-white shadow-md">
+    <h1 class="text-2xl font-bold mb-4 text-blue-700">Asset Maintenance Details</h1>
+    <div id="data-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800"></div>
   </div>
+  <!-- Right: Map -->
+  <div class="md:w-1/2 h-96 md:h-auto">
+    <div id="map"></div>
+  </div>
+</div>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const dataParam = params.get("data");
-    const coordsParam = params.get("coords");
+<script>
+const params = new URLSearchParams(window.location.search);
+const dataParam = params.get("data");
+const coordsParam = params.get("coords");
 
-    // 🧾 Decode & display data
-    if (dataParam) {
-      try {
-        const decoded = decodeURIComponent(dataParam);
-        const lines = decoded.split("\n").filter(line => line.trim() !== "");
-        const container = document.getElementById("data-container");
+if (dataParam) {
+  const container = document.getElementById("data-container");
+  try {
+    const decoded = decodeURIComponent(dataParam);
+    const lines = decoded.split("\n").map(l => l.trim()).filter(l => l !== "");
+    let validFound = false;
 
-        lines.forEach(line => {
-          const parts = line.split(":");
-          if (parts.length > 1) {
-            const label = parts[0].trim();
-            const value = parts.slice(1).join(":").trim();
-
-            const field = document.createElement("div");
-            field.className = "border-b pb-2";
-
-            field.innerHTML = `
-              <div class="font-semibold text-gray-600">${label}</div>
-              <div class="text-gray-900">${value}</div>
-            `;
-            container.appendChild(field);
-          }
-        });
-
-        if (container.innerHTML.trim() === "") {
-          container.innerHTML = `<div class="text-red-600 font-bold">No valid data found.</div>`;
-        }
-      } catch (e) {
-        document.getElementById("data-container").innerHTML =
-          `<div class="text-red-600 font-bold">Invalid data format</div>`;
+    lines.forEach(line => {
+      const parts = line.split(":");
+      if (parts.length > 1) {
+        validFound = true;
+        const label = parts[0].trim();
+        const value = parts.slice(1).join(":").trim();
+        const field = document.createElement("div");
+        field.className = "border-b pb-2";
+        field.innerHTML = `
+          <div class="font-semibold text-blue-700">${label}</div>
+          <div class="text-gray-900">${value}</div>
+        `;
+        container.appendChild(field);
       }
+    });
+
+    if (!validFound) {
+      container.innerHTML = `<div class="text-red-600 font-bold">⚠️ No valid fields found.</div>`;
     }
+  } catch (err) {
+    document.getElementById("data-container").innerHTML =
+      `<div class="text-red-600 font-bold">❌ Invalid data format</div>`;
+  }
+}
 
-    // 📍 Map
-    if (coordsParam) {
-      const [lat, lng] = decodeURIComponent(coordsParam).split(",").map(Number);
-      const map = L.map('map').setView([lat, lng], 15);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(map);
-
-      L.marker([lat, lng]).addTo(map).bindPopup("Asset Location").openPopup();
-    }
-  </script>
+// 🗺️ Map
+if (coordsParam) {
+  const [lat, lng] = decodeURIComponent(coordsParam).split(",").map(Number);
+  const map = L.map('map').setView([lat, lng], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+  L.marker([lat, lng]).addTo(map).bindPopup("Asset Location").openPopup();
+}
+</script>
 </body>
 </html>

@@ -1,142 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>QR Code Generator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- QRCode.js -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<meta charset="UTF-8">
+<title>Asset QR Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  body {
+    font-family: "Segoe UI", Roboto, sans-serif;
+    background-color: #f4f6f8;
+    color: #333;
+    padding: 20px;
+  }
+  h2 { text-align:center; margin-bottom: 20px; }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 20px;
+    max-width: 800px;
+    margin: auto;
+  }
+  label { font-weight: 600; }
+  input {
+    width: 100%;
+    padding: 6px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  #buttons {
+    text-align:center;
+    margin: 20px 0;
+  }
+  button {
+    background-color: #2b6cb0;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    margin: 4px;
+  }
+  button:hover { background-color: #1e4e85; }
+  #qrs {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  .qr-block {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+</style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col md:flex-row">
+<body>
 
-  <!-- LEFT: Input Form -->
-  <div class="md:w-1/2 p-6 bg-white shadow-md">
-    <h1 class="text-2xl font-bold text-blue-700 mb-4">Generate Asset QR Code</h1>
-    <form id="qrForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<h2>📍 Asset QR Generator</h2>
 
-      <div>
-        <label class="block font-semibold mb-1">PM Number</label>
-        <input type="text" id="pmNumber" value="12345" class="w-full border rounded p-2">
-      </div>
+<div class="grid">
+  <label>PM Number:</label>               <input id="pmNumber" value="12345">
+  <label>Frequency:</label>               <input id="frequency" value="6 Months">
+  <label>Responsibility:</label>          <input id="responsibility" value="Mechanical">
+  <label>Reason Of Work:</label>          <input id="reason" value="Safety">
+  <label>Condition:</label>               <input id="condition" value="Item offline">
+  <label>Job Planner:</label>            <input id="planner" value="678">
+  <label>Notes:</label>                  <input id="notes" value="Check before restart">
+  <label>Asset Location [lat, lon]:</label> <input id="coords" value="28.137403674973083, 33.26561997210402">
+</div>
 
-      <div>
-        <label class="block font-semibold mb-1">Frequency</label>
-        <input type="text" id="frequency" value="6 Months" class="w-full border rounded p-2">
-      </div>
+<div id="buttons">
+  <button id="generate">🚀 Generate QR</button>
+</div>
 
-      <div>
-        <label class="block font-semibold mb-1">Responsibility</label>
-        <input type="text" id="responsibility" value="Mechanical" class="w-full border rounded p-2">
-      </div>
+<div id="qrs"></div>
 
-      <div>
-        <label class="block font-semibold mb-1">Reason Of Work</label>
-        <input type="text" id="reason" value="Safety" class="w-full border rounded p-2">
-      </div>
+<script>
+document.getElementById("generate").addEventListener("click", () => {
+  const pmNumber = document.getElementById("pmNumber").value.trim();
+  const frequency = document.getElementById("frequency").value.trim();
+  const responsibility = document.getElementById("responsibility").value.trim();
+  const reason = document.getElementById("reason").value.trim();
+  const condition = document.getElementById("condition").value.trim();
+  const planner = document.getElementById("planner").value.trim();
+  const notes = document.getElementById("notes").value.trim();
+  const coords = document.getElementById("coords").value.trim();
 
-      <div>
-        <label class="block font-semibold mb-1">Condition</label>
-        <input type="text" id="condition" value="Item Offline" class="w-full border rounded p-2">
-      </div>
+  // Build structured text
+  const formattedText = [
+    `PM Number: ${pmNumber}`,
+    `Frequency: ${frequency}`,
+    `Responsibility: ${responsibility}`,
+    `Reason Of Work: ${reason}`,
+    `Condition: ${condition}`,
+    `Job Planner: ${planner}`,
+    `Notes: ${notes}`
+  ].join("\n");
 
-      <div>
-        <label class="block font-semibold mb-1">Job Planner</label>
-        <input type="text" id="planner" value="678" class="w-full border rounded p-2">
-      </div>
+  const encodedText = encodeURIComponent(formattedText);
+  const encodedCoords = encodeURIComponent(coords);
 
-      <div class="sm:col-span-2">
-        <label class="block font-semibold mb-1">Notes</label>
-        <input type="text" id="notes" value="Inspection required" class="w-full border rounded p-2">
-      </div>
+  const formUrl = "https://khoshouey.github.io/asset-qr-form/engine-form.html"; // ✅ your GitHub Pages URL
+  const qrUrl = `${formUrl}?data=${encodedText}&coords=${encodedCoords}`;
 
-      <div class="sm:col-span-2">
-        <label class="block font-semibold mb-1">Coordinates (lat, lng)</label>
-        <input type="text" id="coords" value="28.137403674973083, 33.26561997210402" class="w-full border rounded p-2">
-      </div>
+  const qrDiv = document.getElementById("qrs");
+  qrDiv.innerHTML = "";
 
-      <div class="sm:col-span-2 flex gap-2 mt-4">
-        <button type="button" onclick="generateQR()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          Generate QR
-        </button>
-        <button type="reset" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">
-          Reset
-        </button>
-      </div>
+  const block = document.createElement("div");
+  block.className = "qr-block";
+  const label = document.createElement("p");
+  label.textContent = "📌 Asset QR Code";
+  const qrContainer = document.createElement("div");
+  block.appendChild(label);
+  block.appendChild(qrContainer);
+  qrDiv.appendChild(block);
 
-    </form>
-  </div>
+  new QRCode(qrContainer, {
+    text: qrUrl,
+    width: 280,
+    height: 280,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.L
+  });
+});
+</script>
 
-  <!-- RIGHT: QR Preview -->
-  <div class="md:w-1/2 p-6 flex flex-col items-center justify-center gap-4">
-    <h2 class="text-xl font-bold text-gray-700 mb-2">QR Code Preview</h2>
-    <div id="qrcode" class="bg-white p-4 rounded shadow"></div>
-    <button onclick="copyQRImage()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-      📋 Copy QR Image
-    </button>
-  </div>
-
-  <script>
-    const formUrl = "https://khoshouey.github.io/asset-qr-form/engine-form.html"; // ✅ real form URL
-    let currentCanvas = null;
-
-    function generateQR() {
-      const pmNumber = document.getElementById("pmNumber").value;
-      const frequency = document.getElementById("frequency").value;
-      const responsibility = document.getElementById("responsibility").value;
-      const reason = document.getElementById("reason").value;
-      const condition = document.getElementById("condition").value;
-      const planner = document.getElementById("planner").value;
-      const notes = document.getElementById("notes").value;
-      const coords = document.getElementById("coords").value;
-
-      // Build formatted text with line breaks
-      const formattedText = [
-        "------------------------------",
-        "Preventive Maintenance Details",
-        "------------------------------",
-        `PM Number: ${pmNumber}`,
-        `Frequency: ${frequency}`,
-        `Responsibility: ${responsibility}`,
-        `Reason Of Work: ${reason}`,
-        `Condition: ${condition}`,
-        `Job Planner: ${planner}`,
-        `Notes: ${notes}`,
-        "------------------------------"
-      ].join("\n");
-
-      const encodedText = encodeURIComponent(formattedText);
-      const encodedCoords = encodeURIComponent(coords);
-      const qrUrl = `${formUrl}?data=${encodedText}&coords=${encodedCoords}`;
-
-      // Clear old QR
-      document.getElementById("qrcode").innerHTML = "";
-      const qr = new QRCode(document.getElementById("qrcode"), {
-        text: qrUrl,
-        width: 220,
-        height: 220
-      });
-
-      // Save canvas for copy
-      setTimeout(() => {
-        currentCanvas = document.querySelector("#qrcode canvas");
-      }, 500);
-    }
-
-    async function copyQRImage() {
-      if (!currentCanvas) return;
-      currentCanvas.toBlob(async (blob) => {
-        try {
-          await navigator.clipboard.write([
-            new ClipboardItem({ "image/png": blob })
-          ]);
-          alert("✅ QR image copied to clipboard!");
-        } catch (err) {
-          alert("❌ Failed to copy image: " + err);
-        }
-      });
-    }
-  </script>
 </body>
 </html>
