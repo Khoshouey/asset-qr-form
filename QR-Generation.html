@@ -1,64 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Asset QR Generator</title>
+  <meta charset="UTF-8">
+  <title>QR Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
-
-  <div class="bg-white rounded-lg shadow-lg p-6 max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-    <!-- Left: Form -->
+<body class="bg-gray-100 p-6">
+  <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 grid grid-cols-2 gap-6">
+    <!-- Left Side: Form -->
     <div>
-      <h2 class="text-2xl font-bold mb-4 text-blue-700">Asset QR Generator</h2>
+      <h1 class="text-2xl font-bold mb-4 text-gray-800">Asset QR Code Generator</h1>
+      <div class="grid grid-cols-2 gap-4">
+        <label class="font-semibold text-gray-700">PM Number:</label>
+        <input id="pmNumber" class="border rounded px-2 py-1" value="112233">
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="font-semibold text-gray-700">PM Number</label>
-          <input id="pmNumber" type="text" class="w-full border rounded p-2 mt-1" placeholder="12345">
-        </div>
-        <div>
-          <label class="font-semibold text-gray-700">Frequency</label>
-          <input id="frequency" type="text" class="w-full border rounded p-2 mt-1" placeholder="6 Months">
-        </div>
-        <div>
-          <label class="font-semibold text-gray-700">Responsibility</label>
-          <input id="responsibility" type="text" class="w-full border rounded p-2 mt-1" placeholder="Mechanical">
-        </div>
-        <div>
-          <label class="font-semibold text-gray-700">Reason Of Work</label>
-          <input id="reason" type="text" class="w-full border rounded p-2 mt-1" placeholder="Safety">
-        </div>
-        <div>
-          <label class="font-semibold text-gray-700">Condition</label>
-          <input id="condition" type="text" class="w-full border rounded p-2 mt-1" placeholder="Offline">
-        </div>
-        <div>
-          <label class="font-semibold text-gray-700">Job Planner</label>
-          <input id="planner" type="text" class="w-full border rounded p-2 mt-1" placeholder="678">
-        </div>
-        <div class="sm:col-span-2">
-          <label class="font-semibold text-gray-700">Notes</label>
-          <input id="notes" type="text" class="w-full border rounded p-2 mt-1" placeholder="Optional">
-        </div>
-        <div class="sm:col-span-2">
-          <label class="font-semibold text-gray-700">Coordinates</label>
-          <input id="coords" type="text" class="w-full border rounded p-2 mt-1" placeholder="28.13, 33.26">
-        </div>
+        <label class="font-semibold text-gray-700">Frequency:</label>
+        <input id="frequency" class="border rounded px-2 py-1" value="6 months">
+
+        <label class="font-semibold text-gray-700">Responsibility:</label>
+        <input id="responsibility" class="border rounded px-2 py-1" value="Mechanical">
+
+        <label class="font-semibold text-gray-700">Reason Of Work:</label>
+        <input id="reason" class="border rounded px-2 py-1" value="Critical">
+
+        <label class="font-semibold text-gray-700">Condition:</label>
+        <input id="condition" class="border rounded px-2 py-1" value="On-line">
+
+        <label class="font-semibold text-gray-700">Job Planner:</label>
+        <input id="planner" class="border rounded px-2 py-1" value="12345">
+
+        <label class="font-semibold text-gray-700">Notes:</label>
+        <input id="notes" class="border rounded px-2 py-1" value="Test from me">
+
+        <label class="font-semibold text-gray-700">Coordinates:</label>
+        <input id="coords" class="border rounded px-2 py-1" value="28.1374, 33.2656">
       </div>
 
-      <button onclick="generateQR()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
-        Generate QR
+      <button onclick="generateQR()"
+        class="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        Generate QR Code
       </button>
     </div>
 
-    <!-- Right: QR Display -->
-    <div class="flex flex-col items-center justify-center border-l">
-      <h3 class="text-xl font-semibold mb-2 text-gray-800">QR Code Preview</h3>
-      <div id="qrcode" class="p-4 bg-gray-50 rounded shadow"></div>
-      <button onclick="copyQR()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-        Copy QR Image 📋
+    <!-- Right Side: QR Code -->
+    <div class="flex flex-col items-center justify-center">
+      <div id="qrcode" class="mb-4 border rounded-lg p-4 bg-gray-50"></div>
+      <button onclick="copyQR()"
+        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        Copy QR Image
       </button>
     </div>
   </div>
@@ -67,41 +57,44 @@
     const formUrl = "https://khoshouey.github.io/asset-qr-form/engine-form.html";
 
     function generateQR() {
-      const fields = [
-        ["PM Number", document.getElementById("pmNumber").value],
-        ["Frequency", document.getElementById("frequency").value],
-        ["Responsibility", document.getElementById("responsibility").value],
-        ["Reason Of Work", document.getElementById("reason").value],
-        ["Condition", document.getElementById("condition").value],
-        ["Job Planner", document.getElementById("planner").value],
-        ["Notes", document.getElementById("notes").value]
-      ];
+      const pmNumber = document.getElementById('pmNumber').value;
+      const frequency = document.getElementById('frequency').value;
+      const responsibility = document.getElementById('responsibility').value;
+      const reason = document.getElementById('reason').value;
+      const condition = document.getElementById('condition').value;
+      const planner = document.getElementById('planner').value;
+      const notes = document.getElementById('notes').value;
+      const coords = document.getElementById('coords').value;
 
-      // Add clear line breaks
-      const formattedText = fields
-        .map(([label, value]) => `${label}: ${value}`)
-        .join("\n");
+      // 📝 Correctly formatted with \n after value
+      const formattedText =
+        `PM Number: ${pmNumber}\n` +
+        `Frequency: ${frequency}\n` +
+        `Responsibility: ${responsibility}\n` +
+        `Reason Of Work: ${reason}\n` +
+        `Condition: ${condition}\n` +
+        `Job Planner: ${planner}\n` +
+        `Notes: ${notes}`;
 
-      const coords = document.getElementById("coords").value;
-      const qrUrl = `${formUrl}?data=${encodeURIComponent(formattedText)}&coords=${encodeURIComponent(coords)}`;
+      const encodedText = encodeURIComponent(formattedText);
+      const encodedCoords = encodeURIComponent(coords);
+      const qrUrl = `${formUrl}?data=${encodedText}&coords=${encodedCoords}`;
 
-      document.getElementById("qrcode").innerHTML = "";
-      new QRCode(document.getElementById("qrcode"), {
-        text: qrUrl,
-        width: 180,
-        height: 180
+      QRCode.toCanvas(document.createElement('canvas'), qrUrl, { width: 200 }, (err, canvas) => {
+        if (err) console.error(err);
+        const qrcodeDiv = document.getElementById('qrcode');
+        qrcodeDiv.innerHTML = '';
+        qrcodeDiv.appendChild(canvas);
       });
     }
 
     function copyQR() {
-      const canvas = document.querySelector("#qrcode canvas");
-      if (canvas) {
-        canvas.toBlob(blob => {
-          const item = new ClipboardItem({ "image/png": blob });
-          navigator.clipboard.write([item]);
-          alert("✅ QR image copied to clipboard");
-        });
-      }
+      const canvas = document.querySelector('#qrcode canvas');
+      canvas.toBlob(blob => {
+        const item = new ClipboardItem({ "image/png": blob });
+        navigator.clipboard.write([item]);
+        alert("✅ QR image copied to clipboard!");
+      });
     }
   </script>
 </body>

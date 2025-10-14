@@ -1,64 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Asset Maintenance Details</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-6">
-
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-    <!-- Left: Data Display -->
-    <div>
-      <h2 class="text-2xl font-bold text-blue-700 mb-4">Asset Maintenance Details</h2>
-      <div id="dataContainer" class="space-y-3 bg-white p-4 rounded-lg shadow"></div>
+<body class="bg-gray-100">
+  <div class="grid grid-cols-2 h-screen">
+    <!-- Left: Asset Details -->
+    <div class="p-6 overflow-auto">
+      <h1 class="text-2xl font-bold mb-4 text-gray-800">Asset Maintenance Details</h1>
+      <div id="assetDetails" class="divide-y divide-gray-200"></div>
     </div>
 
     <!-- Right: Map -->
-    <div>
-      <h2 class="text-2xl font-bold text-green-700 mb-4">Location</h2>
-      <div id="map" class="w-full h-96 rounded-lg shadow"></div>
-    </div>
+    <div id="map" class="w-full h-full"></div>
   </div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const rawData = params.get("data");
-    const coords = params.get("coords");
-    const container = document.getElementById("dataContainer");
+    const urlParams = new URLSearchParams(window.location.search);
+    const dataParam = urlParams.get('data');
+    const coordsParam = urlParams.get('coords');
 
-    if (rawData) {
-      const decoded = decodeURIComponent(rawData);
-      const lines = decoded.split("\n");
+    // ✅ Display the asset details in two columns
+    if (dataParam) {
+      const decodedData = decodeURIComponent(dataParam);
+      const lines = decodedData.split('\n');
+      const container = document.getElementById('assetDetails');
 
       lines.forEach(line => {
-        const [label, ...valueParts] = line.split(":");
-        const value = valueParts.join(":").trim();
-        if (label && value) {
-          const row = document.createElement("div");
-          row.className = "grid grid-cols-2 gap-4 border-b pb-2";
-          row.innerHTML = `
-            <div class="font-semibold text-gray-700">${label.trim()}</div>
-            <div class="text-gray-800">${value}</div>
-          `;
+        const [label, value] = line.split(':');
+        if (label && value !== undefined) {
+          const row = document.createElement('div');
+          row.className = 'grid grid-cols-2 gap-4 py-2';
+
+          const labelEl = document.createElement('div');
+          labelEl.textContent = label.trim();
+          labelEl.className = 'font-semibold text-gray-700';
+
+          const valueEl = document.createElement('div');
+          valueEl.textContent = value.trim();
+          valueEl.className = 'text-gray-900';
+
+          row.appendChild(labelEl);
+          row.appendChild(valueEl);
           container.appendChild(row);
         }
       });
     } else {
-      container.innerHTML = `<p class="text-gray-500 italic">No asset data found.</p>`;
+      document.getElementById('assetDetails').innerHTML =
+        '<p class="text-red-600 font-semibold">Invalid data format</p>';
     }
 
-    // Map
-    if (coords) {
-      const [lat, lng] = decodeURIComponent(coords).split(",").map(v => parseFloat(v.trim()));
+    // 🗺️ Display map with marker
+    if (coordsParam) {
+      const decodedCoords = decodeURIComponent(coordsParam);
+      const [lat, lng] = decodedCoords.split(',').map(Number);
       if (!isNaN(lat) && !isNaN(lng)) {
-        const map = L.map("map").setView([lat, lng], 14);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap contributors"
+        const map = L.map('map').setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
         }).addTo(map);
-        L.marker([lat, lng]).addTo(map).bindPopup("Asset Location").openPopup();
+        L.marker([lat, lng]).addTo(map);
       }
     }
   </script>
