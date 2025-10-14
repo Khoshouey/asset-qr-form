@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>QR Generator</title>
+  <title>Asset QR Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -37,8 +37,7 @@
         <input id="coords" class="border rounded px-2 py-1" value="28.1374, 33.2656">
       </div>
 
-      <button onclick="generateQR()"
-        class="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      <button onclick="generateQR()" class="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
         Generate QR Code
       </button>
     </div>
@@ -46,8 +45,7 @@
     <!-- Right Side: QR Code -->
     <div class="flex flex-col items-center justify-center">
       <div id="qrcode" class="mb-4 border rounded-lg p-4 bg-gray-50"></div>
-      <button onclick="copyQR()"
-        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+      <button onclick="copyQR()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
         Copy QR Image
       </button>
     </div>
@@ -56,17 +54,24 @@
   <script>
     const formUrl = "https://khoshouey.github.io/asset-qr-form/engine-form.html";
 
-    function generateQR() {
-      const pmNumber = document.getElementById('pmNumber').value;
-      const frequency = document.getElementById('frequency').value;
-      const responsibility = document.getElementById('responsibility').value;
-      const reason = document.getElementById('reason').value;
-      const condition = document.getElementById('condition').value;
-      const planner = document.getElementById('planner').value;
-      const notes = document.getElementById('notes').value;
-      const coords = document.getElementById('coords').value;
+    // remove any newline characters from inputs to avoid broken lines inside values
+    function sanitizeInput(s) {
+      if (!s) return "";
+      // replace CR/LF with a single space and trim
+      return s.replace(/[\r\n]+/g, " ").trim();
+    }
 
-      // 📝 Correctly formatted with \n after value
+    function generateQR() {
+      const pmNumber = sanitizeInput(document.getElementById('pmNumber').value);
+      const frequency = sanitizeInput(document.getElementById('frequency').value);
+      const responsibility = sanitizeInput(document.getElementById('responsibility').value);
+      const reason = sanitizeInput(document.getElementById('reason').value);
+      const condition = sanitizeInput(document.getElementById('condition').value);
+      const planner = sanitizeInput(document.getElementById('planner').value);
+      const notes = sanitizeInput(document.getElementById('notes').value);
+      const coords = sanitizeInput(document.getElementById('coords').value);
+
+      // ensure newline AFTER each label:value pair (no extra newlines inside values)
       const formattedText =
         `PM Number: ${pmNumber}\n` +
         `Frequency: ${frequency}\n` +
@@ -80,8 +85,12 @@
       const encodedCoords = encodeURIComponent(coords);
       const qrUrl = `${formUrl}?data=${encodedText}&coords=${encodedCoords}`;
 
-      QRCode.toCanvas(document.createElement('canvas'), qrUrl, { width: 200 }, (err, canvas) => {
-        if (err) console.error(err);
+      // render canvas (use QRCode library)
+      QRCode.toCanvas(document.createElement('canvas'), qrUrl, { width: 220 }, (err, canvas) => {
+        if (err) {
+          console.error(err);
+          return;
+        }
         const qrcodeDiv = document.getElementById('qrcode');
         qrcodeDiv.innerHTML = '';
         qrcodeDiv.appendChild(canvas);
@@ -90,10 +99,15 @@
 
     function copyQR() {
       const canvas = document.querySelector('#qrcode canvas');
+      if (!canvas) { alert("No QR to copy. Generate first."); return; }
       canvas.toBlob(blob => {
         const item = new ClipboardItem({ "image/png": blob });
-        navigator.clipboard.write([item]);
-        alert("✅ QR image copied to clipboard!");
+        navigator.clipboard.write([item]).then(() => {
+          alert("✅ QR image copied to clipboard!");
+        }, (err) => {
+          console.error(err);
+          alert("Failed to copy image.");
+        });
       });
     }
   </script>
