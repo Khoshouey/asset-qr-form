@@ -1,137 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>QR Generator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f5f6fa;
-    }
-    .container {
-      display: flex;
-      gap: 30px;
-      max-width: 900px;
-      margin: auto;
-    }
-    .form-section {
-      flex: 1;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .qr-section {
-      width: 280px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 6px;
-      margin-top: 4px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 15px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    #qrcode img {
-      margin-top: 10px;
-    }
-    #generatedUrl {
-      width: 100%;
-      margin-top: 10px;
-      padding: 8px;
-      font-size: 12px;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Asset QR Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
-<body>
-  <h2>Asset QR Generator</h2>
-  <div class="container">
-    <div class="form-section">
-      <label>PM Number</label>
-      <input id="pmNumber" type="text">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
 
-      <label>Frequency</label>
-      <input id="frequency" type="text">
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <!-- Left: Form -->
+    <div>
+      <h2 class="text-2xl font-bold mb-4 text-blue-700">Asset QR Generator</h2>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="font-semibold text-gray-700">PM Number</label>
+          <input id="pmNumber" type="text" class="w-full border rounded p-2 mt-1" placeholder="112233">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Frequency</label>
+          <input id="frequency" type="text" class="w-full border rounded p-2 mt-1" placeholder="6 Months">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Responsibility</label>
+          <input id="responsibility" type="text" class="w-full border rounded p-2 mt-1" placeholder="Mechanical">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Reason Of Work</label>
+          <input id="reason" type="text" class="w-full border rounded p-2 mt-1" placeholder="Safety">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Condition</label>
+          <input id="condition" type="text" class="w-full border rounded p-2 mt-1" placeholder="Offline">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Job Planner</label>
+          <input id="jobPlanner" type="text" class="w-full border rounded p-2 mt-1" placeholder="678">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="font-semibold text-gray-700">Notes</label>
+          <input id="notes" type="text" class="w-full border rounded p-2 mt-1" placeholder="Optional">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="font-semibold text-gray-700">Coordinates</label>
+          <input id="coords" type="text" class="w-full border rounded p-2 mt-1" placeholder="28.13, 33.26">
+        </div>
+      </div>
 
-      <label>Responsibility</label>
-      <input id="responsibility" type="text">
-
-      <label>Reason Of Work</label>
-      <input id="reason" type="text">
-
-      <label>Condition</label>
-      <input id="condition" type="text">
-
-      <label>Job Planner</label>
-      <input id="jobPlanner" type="text">
-
-      <label>Notes</label>
-      <textarea id="notes"></textarea>
-
-      <button onclick="generateQRCode()">Generate QR Code</button>
+      <button onclick="generateQRCode()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
+        🚀 Generate QR
+      </button>
     </div>
 
-    <div class="qr-section">
-      <div id="qrcode"></div>
-      <input id="generatedUrl" readonly>
-      <button onclick="copyURL()">Copy URL</button>
+    <!-- Right: QR Display -->
+    <div class="flex flex-col items-center justify-center border-l">
+      <h3 class="text-xl font-semibold mb-3 text-gray-800">QR Code Preview</h3>
+      <div id="qrcode" class="p-4 bg-gray-50 rounded shadow"></div>
+      <button onclick="copyQRImage()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        📋 Copy QR Image
+      </button>
     </div>
+
   </div>
 
   <script>
+    const formUrl = "https://khoshouey.github.io/asset-qr-form/engine-form.html";
+
     function generateQRCode() {
       const assetData = {
-        pmNumber: document.getElementById("pmNumber").value,
-        frequency: document.getElementById("frequency").value,
-        responsibility: document.getElementById("responsibility").value,
-        reason: document.getElementById("reason").value,
-        condition: document.getElementById("condition").value,
-        jobPlanner: document.getElementById("jobPlanner").value,
-        notes: document.getElementById("notes").value
+        "PM Number": document.getElementById("pmNumber").value,
+        "Frequency": document.getElementById("frequency").value,
+        "Responsibility": document.getElementById("responsibility").value,
+        "Reason Of Work": document.getElementById("reason").value,
+        "Condition": document.getElementById("condition").value,
+        "Job Planner": document.getElementById("jobPlanner").value,
+        "Notes": document.getElementById("notes").value,
+        "Coords": document.getElementById("coords").value
       };
 
       const encodedData = encodeURIComponent(JSON.stringify(assetData));
-      const base = window.location.origin + window.location.pathname.replace('qr-generator.html','engine-form.html');
-      const url = `${base}?data=${encodedData}`;
-      document.getElementById("generatedUrl").value = url;
+      const qrUrl = `${formUrl}?data=${encodedData}`;
 
-      const qrcodeDiv = document.getElementById("qrcode");
-      qrcodeDiv.innerHTML = "";
-      new QRCode(qrcodeDiv, {
-        text: url,
-        width: 250,
-        height: 250
+      document.getElementById("qrcode").innerHTML = "";
+      new QRCode(document.getElementById("qrcode"), {
+        text: qrUrl,
+        width: 220,
+        height: 220
       });
     }
 
-    function copyURL() {
-      const urlField = document.getElementById("generatedUrl");
-      urlField.select();
-      document.execCommand("copy");
-      alert("URL copied to clipboard ✅");
+    function copyQRImage() {
+      const canvas = document.querySelector("#qrcode canvas");
+      if (!canvas) return alert("Please generate the QR code first!");
+      canvas.toBlob(blob => {
+        const item = new ClipboardItem({ "image/png": blob });
+        navigator.clipboard.write([item]).then(() => {
+          alert("✅ QR image copied to clipboard");
+        });
+      });
     }
   </script>
 </body>
