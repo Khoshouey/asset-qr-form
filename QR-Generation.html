@@ -1,112 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>QR Generator</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <meta charset="utf-8" />
+  <title>Asset QR Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    .extra-row input { min-width: 0; }
+  </style>
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-xl mx-auto bg-white p-4 rounded shadow space-y-3">
-    <h1 class="text-xl font-bold mb-3">Asset QR Code Generator</h1>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- LEFT: Form -->
+    <div>
+      <h2 class="text-2xl font-bold mb-4 text-blue-700">Asset QR Generator</h2>
 
-    <!-- Main Inputs -->
-    <div class="grid grid-cols-2 gap-2">
-      <input id="pmNumber" type="text" placeholder="PM Number" class="border p-2" />
-      <input id="frequency" type="text" placeholder="Frequency" class="border p-2" />
-      <input id="responsibility" type="text" placeholder="Responsibility" class="border p-2" />
-      <input id="reason" type="text" placeholder="Reason Of Work" class="border p-2" />
-      <input id="condition" type="text" placeholder="Condition" class="border p-2" />
-      <input id="jobPlanner" type="text" placeholder="Job Planner" class="border p-2" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="font-semibold text-gray-700">PM Number</label>
+          <input id="pmNumber" type="text" class="w-full border rounded p-2 mt-1" placeholder="112233">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Frequency</label>
+          <input id="frequency" type="text" class="w-full border rounded p-2 mt-1" placeholder="12 Months">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Responsibility</label>
+          <input id="responsibility" type="text" class="w-full border rounded p-2 mt-1" placeholder="Mechanical">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Reason Of Work</label>
+          <input id="reason" type="text" class="w-full border rounded p-2 mt-1" placeholder="Critical">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Condition</label>
+          <input id="condition" type="text" class="w-full border rounded p-2 mt-1" placeholder="Online">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Job Planner</label>
+          <input id="jobPlanner" type="text" class="w-full border rounded p-2 mt-1" placeholder="678">
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="font-semibold text-gray-700">Notes</label>
+          <input id="notes" type="text" class="w-full border rounded p-2 mt-1" placeholder="Optional">
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="font-semibold text-gray-700">Coordinates</label>
+          <input id="coords" type="text" class="w-full border rounded p-2 mt-1" placeholder="28.13, 33.26">
+        </div>
+      </div>
+
+      <!-- dynamic extra fields -->
+      <div id="extraFields" class="mt-4 space-y-2"></div>
+
+      <div class="flex gap-2 mt-3">
+        <button id="addRowBtn" class="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          ➕ Add Field
+        </button>
+        <button id="generateBtn" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          🚀 Generate QR
+        </button>
+      </div>
     </div>
 
-    <textarea id="notes" placeholder="Notes" class="border p-2 w-full"></textarea>
-    <input id="coords" type="text" placeholder="Coords (e.g. 28.13, 33.26)" class="border p-2 w-full" />
+    <!-- RIGHT: QR preview -->
+    <div class="flex flex-col items-center justify-center border-l pl-4">
+      <h3 class="text-xl font-semibold mb-2 text-gray-800">QR Code Preview</h3>
+      <div id="qrcode" class="p-4 bg-gray-50 rounded shadow"></div>
 
-    <!-- Add Row Button -->
-    <button id="addRowBtn" type="button" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">+ Add Row</button>
-
-    <!-- Dynamic Fields Container -->
-    <div id="extraFields" class="space-y-2 mt-3"></div>
-
-    <button onclick="generateQR()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Generate QR</button>
-
-    <div id="qrcode" class="mt-4 flex justify-center"></div>
-    <div id="linkContainer" class="mt-2 text-center"></div>
-
-    <button id="copyBtn" onclick="copyQrImage()" class="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 mt-2 hidden">Copy QR Image</button>
+      <div class="mt-4 flex flex-col items-center gap-2">
+        <button id="copyBtn" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 hidden">📋 Copy QR Image</button>
+        <!-- clickable short link text -->
+        <a id="generatedLink" class="text-blue-600 underline font-semibold hidden" target="_blank" rel="noopener">🔗 Link</a>
+      </div>
+    </div>
   </div>
 
   <script>
-    const extraFieldsContainer = document.getElementById('extraFields');
+    // CONTROL: if you host engine-form.html in a different path, set OVERRIDE_GHPAGES_URL,
+    // otherwise code will attempt to infer host from window.location.origin
+    const OVERRIDE_GHPAGES_URL = null; // e.g. "https://khoshouey.github.io/asset-qr-form/engine-form.html"
 
-    document.getElementById('addRowBtn').addEventListener('click', () => {
+    // Build formUrl reliably
+    function getFormUrl() {
+      if (OVERRIDE_GHPAGES_URL) return OVERRIDE_GHPAGES_URL;
+      // use current origin + repo subpath if hosted under GH pages root
+      // assume engine-form.html in folder "asset-qr-form"
+      return `${window.location.origin}/asset-qr-form/engine-form.html`;
+    }
+
+    const addBtn = document.getElementById('addRowBtn');
+    const extraFields = document.getElementById('extraFields');
+    const generateBtn = document.getElementById('generateBtn');
+    const qrcodeDiv = document.getElementById('qrcode');
+    const copyBtn = document.getElementById('copyBtn');
+    const generatedLinkEl = document.getElementById('generatedLink');
+
+    // Add a new label:value row (with remove)
+    addBtn.addEventListener('click', () => {
       const row = document.createElement('div');
-      row.className = 'flex gap-2';
+      row.className = 'flex gap-2 items-center extra-row';
 
-      const labelInput = document.createElement('input');
-      labelInput.type = 'text';
-      labelInput.placeholder = 'Label';
-      labelInput.className = 'border p-1 flex-1';
+      const label = document.createElement('input');
+      label.type = 'text';
+      label.placeholder = 'Label';
+      label.className = 'border p-2 rounded flex-1';
 
-      const valueInput = document.createElement('input');
-      valueInput.type = 'text';
-      valueInput.placeholder = 'Value';
-      valueInput.className = 'border p-1 flex-1';
+      const value = document.createElement('input');
+      value.type = 'text';
+      value.placeholder = 'Value';
+      value.className = 'border p-2 rounded flex-1';
 
-      row.appendChild(labelInput);
-      row.appendChild(valueInput);
-      extraFieldsContainer.appendChild(row);
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.innerHTML = '✖';
+      del.className = 'text-red-500 px-2';
+      del.onclick = () => row.remove();
+
+      row.appendChild(label);
+      row.appendChild(value);
+      row.appendChild(del);
+      extraFields.appendChild(row);
+      label.focus();
     });
 
-    function generateQR() {
+    // collect field values including extra dynamic ones
+    function collectDataObject() {
       const data = {
-        "PM Number": document.getElementById('pmNumber').value,
-        "Frequency": document.getElementById('frequency').value,
-        "Responsibility": document.getElementById('responsibility').value,
-        "Reason Of Work": document.getElementById('reason').value,
-        "Condition": document.getElementById('condition').value,
-        "Job Planner": document.getElementById('jobPlanner').value,
-        "Notes": document.getElementById('notes').value,
-        "Coords": document.getElementById('coords').value
+        "PM Number": document.getElementById('pmNumber').value.trim(),
+        "Frequency": document.getElementById('frequency').value.trim(),
+        "Responsibility": document.getElementById('responsibility').value.trim(),
+        "Reason Of Work": document.getElementById('reason').value.trim(),
+        "Condition": document.getElementById('condition').value.trim(),
+        "Job Planner": document.getElementById('jobPlanner').value.trim(),
+        "Notes": document.getElementById('notes').value.trim(),
+        "Coords": document.getElementById('coords').value.trim()
       };
 
-      // Collect extra fields
-      const extraFields = extraFieldsContainer.querySelectorAll('div');
-      extraFields.forEach(row => {
+      // extras: read each extra-row and add to object (skip empty)
+      extraFields.querySelectorAll('.extra-row').forEach(row => {
         const inputs = row.querySelectorAll('input');
-        const label = inputs[0].value.trim();
-        const value = inputs[1].value.trim();
-        if (label && value) {
-          data[label] = value;
+        const k = inputs[0].value.trim();
+        const v = inputs[1].value.trim();
+        if (k) {
+          // if key already exists, append numeric suffix to avoid overwrite
+          let key = k;
+          let idx = 1;
+          while (Object.prototype.hasOwnProperty.call(data, key)) {
+            key = `${k} (${idx++})`;
+          }
+          data[key] = v;
         }
       });
 
-      const jsonData = encodeURIComponent(JSON.stringify(data));
-      const url = `${window.location.origin}/asset-qr-form/engine-form.html?data=${jsonData}`;
-
-      document.getElementById('qrcode').innerHTML = '';
-      new QRCode(document.getElementById('qrcode'), {
-        text: url,
-        width: 200,
-        height: 200
-      });
-
-      document.getElementById('linkContainer').innerHTML = `<a href="${url}" target="_blank" class="text-blue-600 underline font-semibold">Link</a>`;
-      document.getElementById('copyBtn').classList.remove('hidden');
+      return data;
     }
 
-    function copyQrImage() {
-      const qrCanvas = document.querySelector('#qrcode canvas');
-      if (qrCanvas) {
-        qrCanvas.toBlob(blob => {
-          const item = new ClipboardItem({ 'image/png': blob });
-          navigator.clipboard.write([item]).then(() => {
-            alert('QR code image copied to clipboard!');
-          });
-        });
+    // Generate QR and show link
+    generateBtn.addEventListener('click', () => {
+      const dataObj = collectDataObject();
+      const jsonStr = JSON.stringify(dataObj);
+      const encoded = encodeURIComponent(jsonStr);
+
+      const formUrl = getFormUrl();
+      const fullUrl = `${formUrl}?data=${encoded}`;
+
+      // render QR
+      qrcodeDiv.innerHTML = '';
+      new QRCode(qrcodeDiv, { text: fullUrl, width: 220, height: 220 });
+
+      // show link (short text)
+      generatedLinkEl.href = fullUrl;
+      generatedLinkEl.classList.remove('hidden');
+      copyBtn.classList.remove('hidden');
+
+      // ensure link opens full URL (for scanners)
+      generatedLinkEl.onclick = () => { /* default behavior is fine */ };
+    });
+
+    // copy QR image (copies the canvas/png)
+    copyBtn.addEventListener('click', async () => {
+      const canvas = qrcodeDiv.querySelector('canvas');
+      if (!canvas) { alert('Generate a QR first'); return; }
+      try {
+        const blob = await new Promise(resolve => canvas.toBlob(resolve));
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        alert('✅ QR image copied to clipboard');
+      } catch (err) {
+        console.error(err);
+        alert('Could not copy image: ' + err);
       }
-    }
+    });
   </script>
 </body>
 </html>
