@@ -2,46 +2,103 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Engine Form</title>
+  <title>Asset Maintenance Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    input, textarea { display: block; margin: 5px 0; padding: 5px; width: 300px; }
+    #map { height: 100%; min-height: 400px; }
+    .label-cell { font-weight: 600; color: #1e40af; }
+    .value-cell { color: #374151; }
   </style>
 </head>
-<body>
-  <h2>Engine Form</h2>
+<body class="bg-gray-100 min-h-screen p-6">
 
-  <input id="pmNumber" placeholder="PM Number" readonly>
-  <input id="frequency" placeholder="Frequency" readonly>
-  <input id="responsibility" placeholder="Responsibility" readonly>
-  <input id="reason" placeholder="Reason Of Work" readonly>
-  <input id="condition" placeholder="Condition" readonly>
-  <input id="jobPlanner" placeholder="Job Planner" readonly>
-  <textarea id="notes" placeholder="Notes" readonly></textarea>
-  <input id="coords" placeholder="Coords" readonly>
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Left: Asset Details -->
+    <div>
+      <h2 class="text-2xl font-bold mb-4 text-blue-700">Asset Maintenance Details</h2>
+      <div id="assetDetails" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-base">
+        <!-- Filled dynamically -->
+      </div>
+      <p id="errorMsg" class="text-red-600 mt-4 hidden"></p>
+    </div>
+
+    <!-- Right: Map -->
+    <div class="border rounded-lg overflow-hidden h-[400px]">
+      <div id="map"></div>
+    </div>
+  </div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const encodedData = urlParams.get('data');
-
-    if (encodedData) {
-      try {
-        const decodedData = JSON.parse(decodeURIComponent(encodedData));
-        document.getElementById('pmNumber').value = decodedData["PM Number"] || "";
-        document.getElementById('frequency').value = decodedData["Frequency"] || "";
-        document.getElementById('responsibility').value = decodedData["Responsibility"] || "";
-        document.getElementById('reason').value = decodedData["Reason Of Work"] || "";
-        document.getElementById('condition').value = decodedData["Condition"] || "";
-        document.getElementById('jobPlanner').value = decodedData["Job Planner"] || "";
-        document.getElementById('notes').value = decodedData["Notes"] || "";
-        document.getElementById('coords').value = decodedData["Coords"] || "";
-      } catch (e) {
-        console.error(e);
-        alert("Invalid or missing data.");
-      }
-    } else {
-      alert("Invalid or missing data.");
+    // Helper: get URL parameters
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
     }
+
+    // Main
+    window.addEventListener('DOMContentLoaded', () => {
+      const dataParam = getQueryParam('data');
+      const assetDetailsDiv = document.getElementById('assetDetails');
+      const errorMsg = document.getElementById('errorMsg');
+
+      if (!dataParam) {
+        errorMsg.textContent = '❌ Invalid or missing data.';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      let dataObj;
+      try {
+        dataObj = JSON.parse(decodeURIComponent(dataParam));
+      } catch (e) {
+        errorMsg.textContent = '❌ Error parsing data.';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      // Render fields
+      const fields = [
+        "PM Number",
+        "Frequency",
+        "Responsibility",
+        "Reason Of Work",
+        "Condition",
+        "Job Planner",
+        "Notes"
+      ];
+
+      fields.forEach(key => {
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'label-cell';
+        labelDiv.textContent = key;
+
+        const valueDiv = document.createElement('div');
+        valueDiv.className = 'value-cell';
+        valueDiv.textContent = dataObj[key] || '-';
+
+        assetDetailsDiv.appendChild(labelDiv);
+        assetDetailsDiv.appendChild(valueDiv);
+      });
+
+      // Map
+      if (dataObj["Coords"]) {
+        const coords = dataObj["Coords"].split(',').map(x => parseFloat(x.trim()));
+        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+          const map = L.map('map').setView(coords, 14);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+          }).addTo(map);
+          L.marker(coords).addTo(map).bindPopup('Asset Location').openPopup();
+        } else {
+          document.getElementById('map').innerHTML = '<p class="p-4 text-gray-600">Invalid coordinates</p>';
+        }
+      } else {
+        document.getElementById('map').innerHTML = '<p class="p-4 text-gray-600">No coordinates provided</p>';
+      }
+    });
   </script>
 </body>
 </html>
