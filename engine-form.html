@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Engine Form with Location</title>
+<style>
+  body {font-family: Segoe UI, Roboto, sans-serif; background:#f4f6f8; padding:20px;}
+  textarea {width:100%; height:200px; font-family:monospace; font-size:14px;}
+  #map {height:300px; width:100%; margin-top:15px; border-radius:8px;}
+</style>
+</head>
+<body>
+
+<h2>Engine Form — Auto-Filled from QR</h2>
+<textarea id="qrData"></textarea>
+
+<div id="map"></div>
+
+<script>
+  // Extract data and coordinates from the URL
+  const params = new URLSearchParams(window.location.search);
+  const rawData = params.get("data");
+  const coords = params.get("coords");
+
+  // Fill text field
+  if (rawData) {
+    document.getElementById("qrData").value = decodeURIComponent(rawData);
+  }
+
+  // Initialize Google Maps iframe if coords are available
+  if (coords) {
+    const mapDiv = document.getElementById("map");
+    const [lat, lon] = coords.split(",").map(c => c.trim());
+    if (lat && lon) {
+      mapDiv.innerHTML = `<iframe
+        width="100%"
+        height="300"
+        style="border:0;"
+        loading="lazy"
+        allowfullscreen
+        referrerpolicy="no-referrer-when-downgrade"
+        src="https://www.google.com/maps?q=${lat},${lon}&hl=es;z=16&output=embed">
+      </iframe>`;
+    }
+  }
+</script>
+
+</body>
+</html>
