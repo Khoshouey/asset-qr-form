@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Asset Nameplate Form</title>
+<title>Asset Nameplate</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { background: #f4f6f8; font-family: "Segoe UI", sans-serif; padding: 20px; }
+  body { background: #f4f6f8; font-family: "Segoe UI", sans-serif; }
   .nameplate {
     max-width: 700px;
     margin: 40px auto;
@@ -13,17 +13,25 @@
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-  }
-  .logo { text-align: center; margin-bottom: 20px; }
-  .fields-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
   }
-  .field { display: flex; justify-content: space-between; padding: 6px 10px; background: #f0f0f0; border-radius: 6px; font-weight: 500; }
+  .logo {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .field {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    background: #f0f0f0;
+    border-radius: 6px;
+    font-weight: 500;
+  }
   .field-label { color: #555; }
   .field-value { color: #111; font-weight: 700; }
-  #error { color: red; text-align: center; margin-top: 20px; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -32,34 +40,31 @@
   <div class="logo">
     <img src="https://upload.wikimedia.org/wikipedia/commons/3/33/Caterpillar_logo.svg" alt="Caterpillar Logo" style="height:50px;">
   </div>
-  <div class="fields-grid" id="fields-container"></div>
-  <div id="error"></div>
+  <!-- Fields will be inserted here dynamically -->
 </div>
 
 <script>
-  // Get data from URL
+  // Get data from QR-scanned URL
   const params = new URLSearchParams(window.location.search);
-  const dataParam = params.get("data");
-  const container = document.getElementById("fields-container");
-  const errorDiv = document.getElementById("error");
+  const rawData = params.get("data");
 
-  if (!dataParam) {
-    errorDiv.textContent = "❌ No data found in QR code.";
+  const container = document.getElementById("nameplate");
+
+  if (!rawData) {
+    container.innerHTML += '<div style="grid-column:1/-1; text-align:center; color:red; font-weight:bold;">Invalid or missing data.</div>';
   } else {
     try {
-      const dataObj = JSON.parse(decodeURIComponent(dataParam));
+      const dataObj = JSON.parse(decodeURIComponent(rawData));
       for (const [label, value] of Object.entries(dataObj)) {
-        const div = document.createElement("div");
-        div.className = "field";
-        div.innerHTML = `<span class="field-label">${label}</span><span class="field-value">${value}</span>`;
-        container.appendChild(div);
+        const fieldDiv = document.createElement("div");
+        fieldDiv.className = "field";
+        fieldDiv.innerHTML = `<span class="field-label">${label}</span><span class="field-value">${value}</span>`;
+        container.appendChild(fieldDiv);
       }
     } catch (e) {
-      errorDiv.textContent = "❌ Invalid or missing data format.";
-      console.error(e);
+      container.innerHTML += '<div style="grid-column:1/-1; text-align:center; color:red; font-weight:bold;">Invalid data format.</div>';
     }
   }
 </script>
-
 </body>
 </html>
