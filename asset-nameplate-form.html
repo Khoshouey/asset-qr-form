@@ -2,87 +2,56 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Asset Nameplate</title>
+<title>Asset Nameplate Form</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-  body { background: #f4f6f8; font-family: "Segoe UI", sans-serif; }
-  .nameplate-container { max-width: 800px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+  body { background: #f4f6f8; font-family: "Segoe UI", sans-serif; padding: 20px; }
+  .nameplate {
+    max-width: 700px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
   .logo { text-align: center; margin-bottom: 20px; }
-  .field { display: flex; justify-content: space-between; padding: 8px 12px; background: #f0f0f0; border-radius: 6px; font-weight: 500; margin-bottom: 6px; }
+  .field { display: flex; justify-content: space-between; padding: 6px 10px; background: #f0f0f0; border-radius: 6px; margin-bottom: 8px; font-weight: 500; }
   .field-label { color: #555; }
   .field-value { color: #111; font-weight: 700; }
-  #qrcode-container { text-align: center; margin-top: 20px; }
-  button { margin-top: 12px; }
+  #error { color: red; text-align: center; margin-top: 20px; font-weight: bold; }
 </style>
 </head>
 <body>
 
-<div class="nameplate-container">
-  <div class="logo">
-    <img src="https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/13000668/570950_156125.png" alt="Caterpillar Logo" style="height:50px;">
-    <h2 class="text-2xl font-bold mt-2 text-gray-800">Asset Nameplate</h2>
+<div class="nameplate" id="nameplate">
+  <div class="logo"> 
+ <img src="https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/13000668/570950_156125.png" alt="Caterpillar Logo" style="height:50px;">
   </div>
-
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="nameplate-fields">
-    <!-- Dynamic fields from QR code will appear here -->
-  </div>
-
-  <div id="qrcode-container">
-    <div id="qrcode"></div>
-    <button onclick="copyQR()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-      📋 Copy QR Image
-    </button>
-  </div>
+  <div id="fields-container"></div>
+  <div id="error"></div>
 </div>
 
 <script>
-  // Extract data from URL
+  // Get data from URL
   const params = new URLSearchParams(window.location.search);
-  const rawData = params.get("data");
-  let dataObj = {};
+  const dataParam = params.get("data");
+  const container = document.getElementById("fields-container");
+  const errorDiv = document.getElementById("error");
 
-  if(rawData){
-    try {
-      dataObj = JSON.parse(decodeURIComponent(rawData));
-    } catch(e){
-      alert("❌ Invalid QR code data.");
-    }
+  if (!dataParam) {
+    errorDiv.textContent = "❌ No data found in QR code.";
   } else {
-    alert("❌ No data found in QR code link.");
-  }
-
-  // Display fields in nameplate
-  const container = document.getElementById('nameplate-fields');
-  for(const key in dataObj){
-    if(key.toLowerCase() === "coords") continue; // Skip coordinates if exist
-    const div = document.createElement('div');
-    div.className = "field";
-    div.innerHTML = `<span class="field-label">${key}</span><span class="field-value">${dataObj[key]}</span>`;
-    container.appendChild(div);
-  }
-
-  // Generate QR code linking to the same page (so scanning will open this form with same data)
-  const currentLink = window.location.href;
-  const qrDiv = document.getElementById("qrcode");
-  qrDiv.innerHTML = "";
-  const qrcode = new QRCode(qrDiv, {
-    text: currentLink,
-    width: 180,
-    height: 180
-  });
-
-  // Copy QR image to clipboard
-  function copyQR(){
-    const canvas = qrDiv.querySelector("canvas");
-    if(canvas){
-      canvas.toBlob(blob => {
-        const item = new ClipboardItem({ "image/png": blob });
-        navigator.clipboard.write([item]);
-        alert("✅ QR image copied to clipboard");
-      });
-    } else {
-      alert("❌ QR not generated yet");
+    try {
+      const dataObj = JSON.parse(decodeURIComponent(dataParam));
+      for (const [label, value] of Object.entries(dataObj)) {
+        const div = document.createElement("div");
+        div.className = "field";
+        div.innerHTML = `<span class="field-label">${label}</span><span class="field-value">${value}</span>`;
+        container.appendChild(div);
+      }
+    } catch (e) {
+      errorDiv.textContent = "❌ Invalid or missing data format.";
+      console.error(e);
     }
   }
 </script>
