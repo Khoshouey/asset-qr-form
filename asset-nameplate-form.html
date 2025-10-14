@@ -7,64 +7,71 @@
 <style>
   body { background: #f4f6f8; font-family: "Segoe UI", sans-serif; }
   .nameplate {
-    max-width: 700px;
+    max-width: 800px;
     margin: 40px auto;
     background: #fff;
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+  .logo {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .fields-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
-  .logo {
-    grid-column: 1 / -1;
-    text-align: center;
-    margin-bottom: 12px;
-  }
   .field {
     display: flex;
     justify-content: space-between;
-    padding: 4px 8px;
+    padding: 6px 12px;
     background: #f0f0f0;
     border-radius: 6px;
     font-weight: 500;
   }
   .field-label { color: #555; }
   .field-value { color: #111; font-weight: 700; }
+  .error { text-align:center; color:red; font-weight:bold; margin-top:20px; }
 </style>
 </head>
 <body>
 
-<div class="nameplate" id="nameplate">
+<div class="nameplate">
+  <!-- CAT Logo -->
   <div class="logo">
     <img src="https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/13000668/570950_156125.png" alt="Caterpillar Logo" style="height:50px;">
   </div>
-  <!-- Fields will be inserted here dynamically -->
+
+  <!-- Fields container -->
+  <div id="fields-container" class="fields-grid"></div>
+
 </div>
 
 <script>
-  // Get data from QR-scanned URL
-  const params = new URLSearchParams(window.location.search);
-  const rawData = params.get("data");
+const fieldsContainer = document.getElementById("fields-container");
 
-  const container = document.getElementById("nameplate");
+// Get the QR-scanned data
+const params = new URLSearchParams(window.location.search);
+const rawData = params.get("data");
 
-  if (!rawData) {
-    container.innerHTML += '<div style="grid-column:1/-1; text-align:center; color:red; font-weight:bold;">Invalid or missing data.</div>';
-  } else {
-    try {
-      const dataObj = JSON.parse(decodeURIComponent(rawData));
-      for (const [label, value] of Object.entries(dataObj)) {
-        const fieldDiv = document.createElement("div");
-        fieldDiv.className = "field";
-        fieldDiv.innerHTML = `<span class="field-label">${label}</span><span class="field-value">${value}</span>`;
-        container.appendChild(fieldDiv);
-      }
-    } catch (e) {
-      container.innerHTML += '<div style="grid-column:1/-1; text-align:center; color:red; font-weight:bold;">Invalid data format.</div>';
+if (!rawData) {
+  fieldsContainer.innerHTML = '<div class="error">Invalid or missing data.</div>';
+} else {
+  try {
+    const dataObj = JSON.parse(decodeURIComponent(rawData));
+    for (const [label, value] of Object.entries(dataObj)) {
+      const fieldDiv = document.createElement("div");
+      fieldDiv.className = "field";
+      fieldDiv.innerHTML = `<span class="field-label">${label}</span><span class="field-value">${value}</span>`;
+      fieldsContainer.appendChild(fieldDiv);
     }
+  } catch (e) {
+    fieldsContainer.innerHTML = '<div class="error">Invalid data format.</div>';
   }
+}
 </script>
+
 </body>
 </html>
