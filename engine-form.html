@@ -25,7 +25,7 @@
   }
 
   .container {
-    max-width: 700px;
+    max-width: 800px;
     width: 100%;
   }
 
@@ -43,24 +43,21 @@
     margin-bottom: 20px;
   }
 
-  .label {
-    font-weight: 600;
-    margin-bottom: 8px;
-    display: block;
+  table {
+    width: 100%;
+    border-collapse: collapse;
   }
 
-  .data-box {
-    width: 100%;
-    min-height: 200px;
+  th, td {
     padding: 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+
+  th {
+    width: 35%;
     background: #f9fafb;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-family: monospace;
-    font-size: 14px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    color: #222;
+    font-weight: 600;
   }
 
   #map {
@@ -91,9 +88,11 @@
   }
 
   @media (max-width: 600px) {
-    .card { padding: 15px; }
-    .data-box { font-size: 13px; }
-    button { width: 100%; }
+    th, td {
+      display: block;
+      width: 100%;
+    }
+    th { background: #f1f5f9; }
   }
 </style>
 </head>
@@ -103,12 +102,11 @@
   <h1>🚀 Engine Form — Asset Details</h1>
 
   <div class="card">
-    <label class="label">Asset Information (from QR)</label>
-    <div id="qrData" class="data-box"></div>
+    <table id="assetTable"></table>
   </div>
 
   <div class="card">
-    <label class="label">Asset Location 📍</label>
+    <h3>📍 Asset Location</h3>
     <div id="map">No coordinates available</div>
   </div>
 
@@ -118,20 +116,32 @@
 </div>
 
 <script>
-  // Extract data and coordinates from the URL
   const params = new URLSearchParams(window.location.search);
   const rawData = params.get("data");
   const coords = params.get("coords");
+  const table = document.getElementById("assetTable");
 
-  // Fill data box
-  const dataBox = document.getElementById("qrData");
   if (rawData) {
-    dataBox.textContent = decodeURIComponent(rawData);
+    try {
+      const dataObj = JSON.parse(decodeURIComponent(rawData));
+      table.innerHTML = "";
+      for (const key in dataObj) {
+        const row = document.createElement("tr");
+        const th = document.createElement("th");
+        const td = document.createElement("td");
+        th.textContent = key;
+        td.textContent = dataObj[key];
+        row.appendChild(th);
+        row.appendChild(td);
+        table.appendChild(row);
+      }
+    } catch (e) {
+      table.innerHTML = "<tr><td>Invalid data format</td></tr>";
+    }
   } else {
-    dataBox.textContent = "No data found in QR code.";
+    table.innerHTML = "<tr><td>No data found in QR code</td></tr>";
   }
 
-  // Display Google Map if coordinates are available
   if (coords) {
     const [lat, lon] = coords.split(",").map(c => c.trim());
     if (lat && lon) {
