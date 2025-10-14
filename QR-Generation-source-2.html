@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Asset QR Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Left: Form -->
+    <div>
+      <h2 class="text-2xl font-bold mb-4 text-blue-700">Asset QR Generator</h2>
+      
+      <div id="mainFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="font-semibold text-gray-700">PM Number</label>
+          <input id="pmNumber" type="text" class="w-full border rounded p-2 mt-1" placeholder="112233">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Frequency</label>
+          <input id="frequency" type="text" class="w-full border rounded p-2 mt-1" placeholder="12 Months">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Responsibility</label>
+          <input id="responsibility" type="text" class="w-full border rounded p-2 mt-1" placeholder="Mechanical">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Reason Of Work</label>
+          <input id="reason" type="text" class="w-full border rounded p-2 mt-1" placeholder="Critical">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Condition</label>
+          <input id="condition" type="text" class="w-full border rounded p-2 mt-1" placeholder="Online">
+        </div>
+        <div>
+          <label class="font-semibold text-gray-700">Job Planner</label>
+          <input id="jobPlanner" type="text" class="w-full border rounded p-2 mt-1" placeholder="678">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="font-semibold text-gray-700">Notes</label>
+          <input id="notes" type="text" class="w-full border rounded p-2 mt-1" placeholder="Optional">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="font-semibold text-gray-700">Coordinates</label>
+          <input id="coords" type="text" class="w-full border rounded p-2 mt-1" placeholder="28.13, 33.26">
+        </div>
+      </div>
+
+      <!-- Extra Fields Container -->
+      <div id="extraFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"></div>
+
+      <button onclick="addExtraField()" class="mt-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 w-full">
+        ➕ Add New Field
+      </button>
+
+      <button onclick="generateQR()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
+        Generate QR
+      </button>
+    </div>
+
+    <!-- Right: QR Display -->
+    <div class="flex flex-col items-center justify-center border-l pl-4">
+      <h3 class="text-xl font-semibold mb-2 text-gray-800">QR Code Preview</h3>
+      <div id="qrcode" class="p-4 bg-gray-50 rounded shadow"></div>
+      <button onclick="copyQR()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        📋 Copy QR Image
+      </button>
+      <a id="generatedLink" href="#" target="_blank" class="mt-4 text-blue-600 text-sm underline">🔗 Link</a>
+    </div>
+  </div>
+
+  <script>
+    const formUrl = "https://khoshouey.github.io/asset-qr-form/engine-form.html";
+    let extraCount = 0;
+    let lastURL = "";
+
+    function addExtraField() {
+      extraCount++;
+      const container = document.getElementById('extraFields');
+      const divLabel = document.createElement('div');
+      const divValue = document.createElement('div');
+
+      divLabel.innerHTML = `
+        <label class="font-semibold text-gray-700">Label ${extraCount}</label>
+        <input id="extraLabel_${extraCount}" type="text" class="w-full border rounded p-2 mt-1" placeholder="Custom Label">
+      `;
+
+      divValue.innerHTML = `
+        <label class="font-semibold text-gray-700">Value ${extraCount}</label>
+        <input id="extraValue_${extraCount}" type="text" class="w-full border rounded p-2 mt-1" placeholder="Custom Value">
+      `;
+
+      container.appendChild(divLabel);
+      container.appendChild(divValue);
+    }
+
+    function generateQR() {
+      const dataObj = {
+        "PM Number": document.getElementById('pmNumber').value.trim(),
+        "Frequency": document.getElementById('frequency').value.trim(),
+        "Responsibility": document.getElementById('responsibility').value.trim(),
+        "Reason Of Work": document.getElementById('reason').value.trim(),
+        "Condition": document.getElementById('condition').value.trim(),
+        "Job Planner": document.getElementById('jobPlanner').value.trim(),
+        "Notes": document.getElementById('notes').value.trim(),
+        "Coords": document.getElementById('coords').value.trim()
+      };
+
+      // ✅ Add dynamic extra fields
+      for (let i = 1; i <= extraCount; i++) {
+        const labelEl = document.getElementById(`extraLabel_${i}`);
+        const valueEl = document.getElementById(`extraValue_${i}`);
+        if (labelEl && valueEl) {
+          const label = labelEl.value.trim();
+          const value = valueEl.value.trim();
+          if (label && value) dataObj[label] = value;
+        }
+      }
+
+      const jsonString = JSON.stringify(dataObj);
+      const encodedData = encodeURIComponent(jsonString);
+      lastURL = `${formUrl}?data=${encodedData}`;
+
+      // ✅ Generate QR
+      document.getElementById("qrcode").innerHTML = "";
+      new QRCode(document.getElementById("qrcode"), {
+        text: lastURL,
+        width: 200,
+        height: 200
+      });
+
+      // ✅ Short clickable link
+      const linkEl = document.getElementById("generatedLink");
+      linkEl.href = lastURL;
+    }
+
+    function copyQR() {
+      const canvas = document.querySelector("#qrcode canvas");
+      if (canvas) {
+        canvas.toBlob(blob => {
+          const item = new ClipboardItem({ "image/png": blob });
+          navigator.clipboard.write([item]);
+          alert("✅ QR image copied to clipboard");
+        });
+      } else {
+        alert("❌ Generate the QR first");
+      }
+    }
+  </script>
+</body>
+</html>
