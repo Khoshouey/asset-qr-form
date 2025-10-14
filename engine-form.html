@@ -1,92 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Asset QR Form</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Leaflet Map -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
-  <style>
-    #map { height: 100%; min-height: 400px; }
-  </style>
+<meta charset="UTF-8">
+<title>Engine Form — QR Data Viewer</title>
+<style>
+  body {
+    font-family: "Segoe UI", Roboto, sans-serif;
+    background: #f4f6f8;
+    padding: 20px;
+    color: #333;
+  }
+  h2 {
+    margin-bottom: 20px;
+  }
+  .data-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 800px;
+    margin: auto;
+  }
+  .data-item {
+    background: #f9fafb;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+  }
+  .data-item strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+    color: #555;
+  }
+  #map {
+    height: 300px;
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  #rawData {
+    width: 100%;
+    height: 120px;
+    margin-top: 20px;
+    font-family: monospace;
+    display: none; /* hidden unless needed */
+  }
+</style>
 </head>
-<body class="bg-gray-100">
+<body>
 
-  <div class="flex flex-col md:flex-row h-screen">
-    <!-- LEFT SIDE: DATA -->
-    <div class="md:w-1/2 p-6 overflow-auto bg-white shadow-md">
-      <h1 class="text-2xl font-bold mb-4 text-blue-700">Asset Maintenance Details</h1>
-      <div id="data-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800">
-        <!-- Populated dynamically -->
-      </div>
-    </div>
+<h2>Engine Form — Asset Data</h2>
 
-    <!-- RIGHT SIDE: MAP -->
-    <div class="md:w-1/2 h-96 md:h-auto">
-      <div id="map"></div>
-    </div>
-  </div>
+<div id="data" class="data-container"></div>
+<div id="map"></div>
+<textarea id="rawData" readonly></textarea>
 
-  <script>
-    // Parse URL Parameters
-    const params = new URLSearchParams(window.location.search);
-    const dataParam = params.get("data");
-    const coordsParam = params.get("coords");
+<script>
+  // Get parameters from URL
+  const params = new URLSearchParams(window.location.search);
+  const rawData = params.get("data");
+  const coords = params.get("coords");
 
-    // Decode and display data
-    if (dataParam) {
-      try {
-        const decoded = decodeURIComponent(dataParam);
-        const lines = decoded.split("\n").filter(line => line.trim() !== "");
-        const container = document.getElementById("data-container");
+  const dataContainer = document.getElementById("data");
+  const rawTextarea = document.getElementById("rawData");
 
-        lines.forEach(line => {
-          // Split line on first ":"
-          const parts = line.split(":");
-          if (parts.length > 1) {
-            const label = parts[0].trim();
-            const value = parts.slice(1).join(":").trim();
+  if (rawData) {
+    const decodedText = decodeURIComponent(rawData);
+    rawTextarea.value = decodedText;
 
-            const field = document.createElement("div");
-            field.className = "border-b pb-2";
+    // ✅ Split the text into lines and parse key/value pairs
+    const lines = decodedText.split("\n").filter(line =>
+      line.trim() !== "" &&
+      !line.startsWith("---")
+    );
 
-            field.innerHTML = `
-              <div class="font-semibold text-gray-600">${label}</div>
-              <div class="text-gray-900">${value}</div>
-            `;
-            container.appendChild(field);
-          }
-        });
-      } catch (e) {
-        document.getElementById("data-container").innerHTML =
-          `<div class="text-red-600 font-bold">Invalid data format</div>`;
-      }
+    lines.forEach(line => {
+      const [label, ...rest] = line.split(":");
+      const value = rest.join(":").trim();
+      const item = document.createElement("div");
+      item.className = "data-item";
+      item.innerHTML = `<strong>${label.trim()}</strong>${value || ""}`;
+      dataContainer.appendChild(item);
+    });
+  }
+
+  // 🗺 Show Google Map if coordinates exist
+  if (coords) {
+    const [lat, lon] = decodeURIComponent(coords).split(",").map(c => c.trim());
+    if (lat && lon) {
+      const mapDiv = document.getElementById("map");
+      mapDiv.innerHTML = `<iframe
+        width="100%"
+        height="300"
+        style="border:0;"
+        loading="lazy"
+        allowfullscreen
+        referrerpolicy="no-referrer-when-downgrade"
+        src="https://www.google.com/maps?q=${lat},${lon}&z=16&output=embed">
+      </iframe>`;
     }
+  }
+</script>
 
-    // Map
-    if (coordsParam) {
-      const [lat, lng] = decodeURIComponent(coordsParam).split(",").map(Number);
-      const map = L.map('map').setView([lat, lng], 15);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(map);
-
-      L.marker([lat, lng]).addTo(map).bindPopup("Asset Location").openPopup();
-    }
-  </script>
 </body>
 </html>
