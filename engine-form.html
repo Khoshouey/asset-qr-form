@@ -1,114 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
+  <meta charset="UTF-8" />
   <title>Asset Maintenance Details</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
-    body { background:#f3f4f6; margin:0; font-family:Inter, Arial, sans-serif; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 10px 0; align-items: center; }
-    .label { font-weight: 700; color:#0f172a; }
-    .value { color:#111827; text-align:right; word-break: break-word; }
-    .box { background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
-    #map { width:100%; height:100%; border-radius:8px; }
-    .container { max-width:1100px; margin:20px auto; display:grid; grid-template-columns: 1fr 1fr; gap:20px; height: calc(100vh - 40px); }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f6fa;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    #assetDetails {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .label {
+      text-align: right;
+      font-weight: bold;
+      padding-right: 10px;
+    }
+    .value {
+      text-align: left;
+      background: #f9f9f9;
+      padding: 6px 8px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+    #map {
+      width: 100%;
+      height: 400px;
+      background: #e3e3e3;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
+  <h2>Asset Maintenance Details</h2>
   <div class="container">
-    <div class="box" id="leftBox">
-      <h2 class="text-2xl font-bold mb-4">Asset Maintenance Details</h2>
-      <div id="dataList" aria-live="polite"></div>
-    </div>
-    <div class="box" id="rightBox">
-      <h2 class="text-2xl font-bold mb-4 text-green-600">Location</h2>
-      <div id="map"></div>
-    </div>
+    <div id="assetDetails"></div>
+    <div id="map">Map Area</div>
   </div>
 
   <script>
-    // Robust parsing for messy inputs:
-    //  - split on newline
-    //  - if a line contains ":", treat as new pair
-    //  - if a line has no ":", append it to previous value (continuation)
-    // This covers cases like:
-    //   "PM Number\n112233Frequency: 6 months..."
-    // where the label and value split across lines.
-    function parseKeyValueLines(raw) {
-      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l !== "");
-      const pairs = [];
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (line.includes(":")) {
-          const [k, ...rest] = line.split(":");
-          const v = rest.join(":").trim();
-          pairs.push({ k: k.trim(), v });
-        } else {
-          // continuation line: append to previous value if exists,
-          // otherwise keep as orphan and try to split by first space
-          if (pairs.length > 0) {
-            // append with a space to previous value
-            pairs[pairs.length - 1].v += (pairs[pairs.length - 1].v ? " " : "") + line;
-          } else {
-            // no previous pair: try to split the line at first space or keep as label
-            const firstSpace = line.indexOf(" ");
-            if (firstSpace > 0) {
-              const k = line.slice(0, firstSpace).trim();
-              const v = line.slice(firstSpace + 1).trim();
-              pairs.push({ k, v });
-            } else {
-              // completely orphan: put as label with empty value
-              pairs.push({ k: line, v: "" });
-            }
-          }
-        }
+    window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const dataString = params.get("data");
+
+      if (!dataString) {
+        document.getElementById("assetDetails").innerText = "No data found";
+        return;
       }
-      return pairs;
-    }
 
-    // Read params
-    const params = new URLSearchParams(window.location.search);
-    const rawData = params.get("data") || "";
-    const coordsParam = params.get("coords") || "";
+      try {
+        const asset = JSON.parse(decodeURIComponent(dataString));
+        const fields = [
+          ["PM Number", asset.pmNumber],
+          ["Frequency", asset.frequency],
+          ["Responsibility", asset.responsibility],
+          ["Reason Of Work", asset.reason],
+          ["Condition", asset.condition],
+          ["Job Planner", asset.jobPlanner],
+          ["Notes", asset.notes]
+        ];
 
-    const dataList = document.getElementById("dataList");
-
-    if (rawData.trim() === "") {
-      dataList.innerHTML = '<p class="text-red-600">No asset data found.</p>';
-    } else {
-      const decoded = decodeURIComponent(rawData);
-      const pairs = parseKeyValueLines(decoded);
-
-      // render pairs in neat two-column rows
-      pairs.forEach(p => {
-        const row = document.createElement("div");
-        row.className = "row";
-        const lab = document.createElement("div"); lab.className = "label"; lab.textContent = p.k;
-        const val = document.createElement("div"); val.className = "value"; val.textContent = p.v;
-        row.appendChild(lab); row.appendChild(val);
-        dataList.appendChild(row);
-      });
-    }
-
-    // Map with Leaflet (no API key)
-    if (coordsParam.trim() !== "") {
-      const decodedCoords = decodeURIComponent(coordsParam);
-      const parts = decodedCoords.split(",").map(s => parseFloat(s.trim()));
-      if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-        const lat = parts[0], lng = parts[1];
-        const map = L.map('map').setView([lat, lng], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-        L.marker([lat, lng]).addTo(map).bindPopup("Asset location").openPopup();
-      } else {
-        document.getElementById('map').innerHTML = "<p class='text-red-600 p-4'>Invalid coordinates</p>";
+        const container = document.getElementById("assetDetails");
+        container.innerHTML = fields.map(([label, value]) => `
+          <div class="label">${label}:</div>
+          <div class="value">${value || ""}</div>
+        `).join("");
+      } catch (e) {
+        document.getElementById("assetDetails").innerText = "Invalid data format";
       }
-    } else {
-      document.getElementById('map').innerHTML = "<p class='text-gray-600 p-4'>No coordinates provided</p>";
-    }
+    };
   </script>
 </body>
 </html>
