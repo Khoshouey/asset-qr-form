@@ -67,27 +67,23 @@
     const formUrl = "https://khoshouey.github.io/asset-qr-form/engine-form.html";
 
     function generateQR() {
-      const pmNumber = document.getElementById("pmNumber").value;
-      const frequency = document.getElementById("frequency").value;
-      const responsibility = document.getElementById("responsibility").value;
-      const reason = document.getElementById("reason").value;
-      const condition = document.getElementById("condition").value;
-      const planner = document.getElementById("planner").value;
-      const notes = document.getElementById("notes").value;
+      const fields = [
+        ["PM Number", document.getElementById("pmNumber").value],
+        ["Frequency", document.getElementById("frequency").value],
+        ["Responsibility", document.getElementById("responsibility").value],
+        ["Reason Of Work", document.getElementById("reason").value],
+        ["Condition", document.getElementById("condition").value],
+        ["Job Planner", document.getElementById("planner").value],
+        ["Notes", document.getElementById("notes").value]
+      ];
+
+      // Add clear line breaks
+      const formattedText = fields
+        .map(([label, value]) => `${label}: ${value}`)
+        .join("\n");
+
       const coords = document.getElementById("coords").value;
-
-      const formattedText =
-`PM Number: ${pmNumber}
-Frequency: ${frequency}
-Responsibility: ${responsibility}
-Reason Of Work: ${reason}
-Condition: ${condition}
-Job Planner: ${planner}
-Notes: ${notes}`;
-
-      const encodedText = encodeURIComponent(formattedText);
-      const encodedCoords = encodeURIComponent(coords);
-      const qrUrl = `${formUrl}?data=${encodedText}&coords=${encodedCoords}`;
+      const qrUrl = `${formUrl}?data=${encodeURIComponent(formattedText)}&coords=${encodeURIComponent(coords)}`;
 
       document.getElementById("qrcode").innerHTML = "";
       new QRCode(document.getElementById("qrcode"), {
