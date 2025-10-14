@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>QR Generator</title>
+  <meta charset="UTF-8" />
+  <title>Asset QR Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -12,7 +12,7 @@
     <!-- Left: Form -->
     <div>
       <h2 class="text-2xl font-bold mb-4 text-blue-700">Asset QR Generator</h2>
-      
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="font-semibold text-gray-700">PM Number</label>
@@ -76,15 +76,14 @@
       const notes = document.getElementById("notes").value;
       const coords = document.getElementById("coords").value;
 
-      const formattedText = [
-        `PM Number: ${pmNumber}`,
-        `Frequency: ${frequency}`,
-        `Responsibility: ${responsibility}`,
-        `Reason Of Work: ${reason}`,
-        `Condition: ${condition}`,
-        `Job Planner: ${planner}`,
-        `Notes: ${notes}`
-      ].join("\n");
+      const formattedText =
+`PM Number: ${pmNumber}
+Frequency: ${frequency}
+Responsibility: ${responsibility}
+Reason Of Work: ${reason}
+Condition: ${condition}
+Job Planner: ${planner}
+Notes: ${notes}`;
 
       const encodedText = encodeURIComponent(formattedText);
       const encodedCoords = encodeURIComponent(coords);
