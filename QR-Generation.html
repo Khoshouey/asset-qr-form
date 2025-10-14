@@ -1,72 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>QR Generator</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    input, textarea { display: block; margin: 5px 0; padding: 5px; width: 250px; }
-    #qrcode { margin-top: 15px; }
-    button { margin-top: 10px; padding: 6px 10px; }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h2>QR Code Generator</h2>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-xl mx-auto bg-white p-4 rounded shadow space-y-3">
+    <h1 class="text-xl font-bold mb-3">Asset QR Code Generator</h1>
 
-  <input id="pmNumber" placeholder="PM Number">
-  <input id="frequency" placeholder="Frequency">
-  <input id="responsibility" placeholder="Responsibility">
-  <input id="reason" placeholder="Reason Of Work">
-  <input id="condition" placeholder="Condition">
-  <input id="jobPlanner" placeholder="Job Planner">
-  <textarea id="notes" placeholder="Notes"></textarea>
-  <input id="coords" placeholder="Coords (e.g., 28.13, 33.26)">
+    <!-- Main Inputs -->
+    <div class="grid grid-cols-2 gap-2">
+      <input id="pmNumber" type="text" placeholder="PM Number" class="border p-2" />
+      <input id="frequency" type="text" placeholder="Frequency" class="border p-2" />
+      <input id="responsibility" type="text" placeholder="Responsibility" class="border p-2" />
+      <input id="reason" type="text" placeholder="Reason Of Work" class="border p-2" />
+      <input id="condition" type="text" placeholder="Condition" class="border p-2" />
+      <input id="jobPlanner" type="text" placeholder="Job Planner" class="border p-2" />
+    </div>
 
-  <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode"></div>
-  <button onclick="copyQRImage()">📋 Copy QR Image</button>
+    <textarea id="notes" placeholder="Notes" class="border p-2 w-full"></textarea>
+    <input id="coords" type="text" placeholder="Coords (e.g. 28.13, 33.26)" class="border p-2 w-full" />
+
+    <!-- Add Row Button -->
+    <button id="addRowBtn" type="button" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">+ Add Row</button>
+
+    <!-- Dynamic Fields Container -->
+    <div id="extraFields" class="space-y-2 mt-3"></div>
+
+    <button onclick="generateQR()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Generate QR</button>
+
+    <div id="qrcode" class="mt-4 flex justify-center"></div>
+    <div id="linkContainer" class="mt-2 text-center"></div>
+
+    <button id="copyBtn" onclick="copyQrImage()" class="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 mt-2 hidden">Copy QR Image</button>
+  </div>
 
   <script>
-    let qrcodeInstance = null;
+    const extraFieldsContainer = document.getElementById('extraFields');
+
+    document.getElementById('addRowBtn').addEventListener('click', () => {
+      const row = document.createElement('div');
+      row.className = 'flex gap-2';
+
+      const labelInput = document.createElement('input');
+      labelInput.type = 'text';
+      labelInput.placeholder = 'Label';
+      labelInput.className = 'border p-1 flex-1';
+
+      const valueInput = document.createElement('input');
+      valueInput.type = 'text';
+      valueInput.placeholder = 'Value';
+      valueInput.className = 'border p-1 flex-1';
+
+      row.appendChild(labelInput);
+      row.appendChild(valueInput);
+      extraFieldsContainer.appendChild(row);
+    });
 
     function generateQR() {
-      const dataObj = {
-        "PM Number": document.getElementById('pmNumber').value.trim(),
-        "Frequency": document.getElementById('frequency').value.trim(),
-        "Responsibility": document.getElementById('responsibility').value.trim(),
-        "Reason Of Work": document.getElementById('reason').value.trim(),
-        "Condition": document.getElementById('condition').value.trim(),
-        "Job Planner": document.getElementById('jobPlanner').value.trim(),
-        "Notes": document.getElementById('notes').value.trim(),
-        "Coords": document.getElementById('coords').value.trim()
+      const data = {
+        "PM Number": document.getElementById('pmNumber').value,
+        "Frequency": document.getElementById('frequency').value,
+        "Responsibility": document.getElementById('responsibility').value,
+        "Reason Of Work": document.getElementById('reason').value,
+        "Condition": document.getElementById('condition').value,
+        "Job Planner": document.getElementById('jobPlanner').value,
+        "Notes": document.getElementById('notes').value,
+        "Coords": document.getElementById('coords').value
       };
 
-      const jsonString = JSON.stringify(dataObj);
-      const encodedData = encodeURIComponent(jsonString);
-      const url = `engine-form.html?data=${encodedData}`;
+      // Collect extra fields
+      const extraFields = extraFieldsContainer.querySelectorAll('div');
+      extraFields.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const label = inputs[0].value.trim();
+        const value = inputs[1].value.trim();
+        if (label && value) {
+          data[label] = value;
+        }
+      });
 
-      // Clear previous QR
-      document.getElementById("qrcode").innerHTML = "";
-      qrcodeInstance = new QRCode(document.getElementById("qrcode"), {
+      const jsonData = encodeURIComponent(JSON.stringify(data));
+      const url = `${window.location.origin}/asset-qr-form/engine-form.html?data=${jsonData}`;
+
+      document.getElementById('qrcode').innerHTML = '';
+      new QRCode(document.getElementById('qrcode'), {
         text: url,
         width: 200,
         height: 200
       });
+
+      document.getElementById('linkContainer').innerHTML = `<a href="${url}" target="_blank" class="text-blue-600 underline font-semibold">Link</a>`;
+      document.getElementById('copyBtn').classList.remove('hidden');
     }
 
-    async function copyQRImage() {
-      const img = document.querySelector('#qrcode img');
-      if (!img) {
-        alert("Please generate the QR first!");
-        return;
+    function copyQrImage() {
+      const qrCanvas = document.querySelector('#qrcode canvas');
+      if (qrCanvas) {
+        qrCanvas.toBlob(blob => {
+          const item = new ClipboardItem({ 'image/png': blob });
+          navigator.clipboard.write([item]).then(() => {
+            alert('QR code image copied to clipboard!');
+          });
+        });
       }
-
-      const response = await fetch(img.src);
-      const blob = await response.blob();
-      const item = new ClipboardItem({ "image/png": blob });
-      await navigator.clipboard.write([item]);
-      alert("✅ QR image copied to clipboard!");
     }
   </script>
 </body>
