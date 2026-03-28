@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Asset Maintenance Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tab-active { border-b-2 border-blue-600 text-blue-600 font-semibold; }
+    .tab-pane { padding-top: 1rem; }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6">
+    <h1 class="text-2xl font-bold mb-4 text-blue-700">Asset Maintenance Details (QR Scan)</h1>
+
+    <!-- Tabs -->
+    <div class="flex space-x-6 border-b mb-4">
+      <button class="tab-btn tab-active" data-tab="asset">Asset Details</button>
+      <button class="tab-btn" data-tab="preventive">Preventive Maintenance</button>
+      <button class="tab-btn" data-tab="failure">Failure Analysis</button>
+      <button class="tab-btn" data-tab="inspection">Visual Inspection</button>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="tab-content">
+      <div id="asset" class="tab-pane"></div>
+      <div id="preventive" class="tab-pane hidden"></div>
+      <div id="failure" class="tab-pane hidden"></div>
+      <div id="inspection" class="tab-pane hidden"></div>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panes = document.querySelectorAll('.tab-pane');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(b => b.classList.remove('tab-active'));
+        btn.classList.add('tab-active');
+        panes.forEach(p => p.classList.add('hidden'));
+        document.getElementById(btn.dataset.tab).classList.remove('hidden');
+      });
+    });
+
+    // Read ?data= from QR
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('data');
+    if (raw) {
+      try {
+        const data = JSON.parse(decodeURIComponent(raw));
+
+        // Common asset info block
+        const assetBlock = `
+          <h3 class="text-lg font-semibold text-blue-700">Asset Information</h3>
+          <p><strong>Asset Number:</strong> ${data["Asset Number"] || ""}</p>
+          <p><strong>Asset Description:</strong> ${data["Asset Description"] || ""}</p>
+          <p><strong>Location:</strong> ${data["Location"] || ""}</p>
+          <p><strong>Field:</strong> ${data["Field"] || ""}</p>
+          <p><strong>Platform:</strong> ${data["Platform"] || ""}</p>
+          <p><strong>Responsibility:</strong> ${data["Responsibility"] || ""}</p>
+          <p><strong>Operations System:</strong> ${data["Operations System"] || ""}</p>
+        `;
+
+        // Asset Details tab
+        document.getElementById('asset').innerHTML = `
+          <h2 class="text-xl font-semibold text-blue-700">Asset Details</h2>
+          ${assetBlock}
+        `;
+
+        // Preventive Maintenance tab
+        document.getElementById('preventive').innerHTML = `
+          <h2 class="text-xl font-semibold text-blue-700">Preventive Maintenance</h2>
+          ${assetBlock}
+          <p><strong>Notes:</strong> ${data["Preventive Notes"] || ""}</p>
+          <p><strong>Frequency:</strong> ${data["Frequency"] || ""}</p>
+          <p><strong>Responsible Team:</strong> ${data["Responsible Team"] || ""}</p>
+          <h3 class="text-lg font-semibold text-gray-700">Job Plan Details</h3>
+          ${Object.keys(data).filter(k => k.startsWith("Job Step")).map(k => `<p><strong>${k}:</strong> ${data[k]}</p>`).join("")}
+        `;
+
+        // Failure Analysis tab (empty but shows asset data)
+        document.getElementById('failure').innerHTML = `
+          <h2 class="text-xl font-semibold text-blue-700">Failure Analysis</h2>
+          ${assetBlock}
+          <p><em>Laborers will fill in failure details here...</em></p>
+        `;
+
+        // Visual Inspection tab (empty but shows asset data)
+        document.getElementById('inspection').innerHTML = `
+          <h2 class="text-xl font-semibold text-blue-700">Visual Inspection</h2>
+          ${assetBlock}
+          <p><em>Laborers will complete inspection checklist here...</em></p>
+        `;
+      } catch (e) {
+        console.error("Error parsing QR data", e);
+      }
+    } else {
+      document.getElementById('asset').innerHTML = "<p>No asset data found. Please scan a valid QR code.</p>";
+      document.getElementById('preventive').innerHTML = "<p>No preventive maintenance data found.</p>";
+      document.getElementById('failure').innerHTML = "<p>Laborers will fill in failure details here...</p>";
+      document.getElementById('inspection').innerHTML = "<p>Laborers will complete inspection checklist here...</p>";
+    }
+  </script>
+</body>
+</html>
