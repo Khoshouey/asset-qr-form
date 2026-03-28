@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Asset Maintenance Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- QRCode.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    .tab-active { border-b-2 border-blue-600 text-blue-600 font-semibold; }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6">
+    <h1 class="text-2xl font-bold mb-4 text-blue-700">Asset Maintenance Details</h1>
+
+    <!-- Tabs -->
+    <div class="flex space-x-6 border-b mb-4">
+      <button class="tab-btn tab-active" data-tab="asset">Asset Details</button>
+      <button class="tab-btn" data-tab="preventive">Preventive Maintenance</button>
+      <button class="tab-btn" data-tab="failure">Failure Analysis</button>
+      <button class="tab-btn" data-tab="inspection">Visual Inspection</button>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="tab-content">
+      <!-- Asset Details -->
+      <div id="asset" class="tab-pane">
+        <form id="assetForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <label>Asset Number 
+              <input name="Asset Number" type="text" class="w-full border rounded p-2">
+            </label>
+            <label>Asset Description 
+              <textarea name="Asset Description" class="w-full border rounded p-2"></textarea>
+            </label>
+            <label>Location <input name="Location" type="text" class="w-full border rounded p-2"></label>
+            <label>Field <input name="Field" type="text" class="w-full border rounded p-2"></label>
+            <label>Platform <input name="Platform" type="text" class="w-full border rounded p-2"></label>
+            <label>Responsibility <input name="Responsibility" type="text" class="w-full border rounded p-2"></label>
+            <label>Operations System <input name="Operations System" type="text" class="w-full border rounded p-2"></label>
+          </div>
+        </form>
+      </div>
+
+      <!-- Preventive Maintenance -->
+      <div id="preventive" class="tab-pane hidden">
+        <form id="preventiveForm" class="space-y-4">
+          <h2 class="text-xl font-semibold text-blue-700">Preventive Maintenance</h2>
+
+          <!-- PM Details -->
+          <h3 class="text-lg font-semibold text-gray-700">PM Details</h3>
+          <textarea name="Preventive Notes" placeholder="Maintenance Notes..." class="w-full border rounded p-2"></textarea>
+          <input name="Frequency" type="text" placeholder="Frequency (e.g. Monthly)" class="w-full border rounded p-2">
+          <input name="Responsible Team" type="text" placeholder="Responsible Team" class="w-full border rounded p-2">
+
+          <!-- Job Plan Details -->
+          <h3 class="text-lg font-semibold text-gray-700">Job Plan Details</h3>
+          <div id="jobPlanFields" class="space-y-2">
+            <input type="text" name="Job Step 1" placeholder="Step 1" class="w-full border rounded p-2">
+          </div>
+          <button type="button" id="addJobField" class="bg-blue-600 text-white px-3 py-1 rounded">Add New Field</button>
+        </form>
+      </div>
+
+      <!-- Failure Analysis -->
+      <div id="failure" class="tab-pane hidden">
+        <form id="failureForm" class="space-y-4">
+          <h2 class="text-xl font-semibold text-blue-700">Failure Analysis Report</h2>
+          <textarea name="Failure Description" placeholder="Failure Description..." class="w-full border rounded p-2"></textarea>
+          <textarea name="Root Cause" placeholder="Root Cause Analysis..." class="w-full border rounded p-2"></textarea>
+          <textarea name="Corrective Actions" placeholder="Corrective Actions..." class="w-full border rounded p-2"></textarea>
+        </form>
+      </div>
+
+      <!-- Visual Inspection -->
+      <div id="inspection" class="tab-pane hidden">
+        <form id="inspectionForm" class="space-y-4">
+          <h2 class="text-xl font-semibold text-blue-700">Visual Inspection Checklist (Oil & Gas)</h2>
+          <div class="space-y-2">
+            <label><input name="Leaks" type="checkbox"> No leaks (oil, gas, water)</label>
+            <label><input name="Corrosion" type="checkbox"> No corrosion on piping/valves</label>
+            <label><input name="Pressure Gauges" type="checkbox"> Pressure gauges readable and calibrated</label>
+            <label><input name="Safety Guards" type="checkbox"> Safety guards intact</label>
+            <label><input name="Electrical Integrity" type="checkbox"> No exposed wires or electrical hazards</label>
+            <label><input name="Signage" type="checkbox"> Safety signage visible and legible</label>
+            <label><input name="Fire Extinguishers" type="checkbox"> Fire extinguishers present and inspected</label>
+            <label><input name="Emergency Exits" type="checkbox"> Emergency exits clear and marked</label>
+            <label><input name="Noise Levels" type="checkbox"> Noise levels within safe limits</label>
+            <label><input name="Lighting" type="checkbox"> Adequate lighting in work area</label>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- QR Code Generator -->
+    <div class="mt-6 space-y-4">
+      <button id="generateQR" class="bg-green-600 text-white px-4 py-2 rounded">Generate QR Code</button>
+      <div id="qrcode" class="mt-4"></div>
+      <button id="downloadQR" class="hidden bg-blue-600 text-white px-4 py-2 rounded">Download QR Code</button>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panes = document.querySelectorAll('.tab-pane');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(b => b.classList.remove('tab-active'));
+        btn.classList.add('tab-active');
+        panes.forEach(p => p.classList.add('hidden'));
+        document.getElementById(btn.dataset.tab).classList.remove('hidden');
+      });
+    });
+
+    // Add new job plan field
+    document.getElementById('addJobField').addEventListener('click', () => {
+      const container = document.getElementById('jobPlanFields');
+      const count = container.querySelectorAll('input').length + 1;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = `Job Step ${count}`;
+      input.placeholder = `Step ${count}`;
+      input.className = 'w-full border rounded p-2';
+      container.appendChild(input);
+    });
+
+    // Collect all form data
+    function collectData() {
+      const data = {};
+      document.querySelectorAll('input, textarea').forEach(el => {
+        if (el.type === 'checkbox') {
+          data[el.name] = el.checked ? 'Yes' : 'No';
+        } else {
+          data[el.name] = el.value;
+        }
+      });
+      return data;
+    }
+
+    // Generate QR code
+    document.getElementById('generateQR').addEventListener('click', () => {
+      const data = collectData();
+      const encoded = encodeURIComponent(JSON.stringify(data));
+      const url = window.location.origin + window.location.pathname + '?data=' + encoded;
+      document.getElementById('qrcode').innerHTML = '';
+      new QRCode(document.getElementById('qrcode'), {
+        text: url,
+        width: 200,
+        height: 200
+      });
+      document.getElementById('downloadQR').classList.remove('hidden');
+    });
+
+    // Download QR code as PNG
+    document.getElementById('downloadQR').addEventListener('click', () => {
+      const canvas = document.querySelector('#qrcode canvas');
+      const link = document.createElement('a');
+      link.download = 'asset_qr.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      link.click();
+    });
+  </script>
+</body>
+</html>
