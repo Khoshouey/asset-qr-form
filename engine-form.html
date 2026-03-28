@@ -8,109 +8,22 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     #map { height: 100%; min-height: 300px; }
-    .tab-active { border-b-2 border-blue-600 text-blue-600 font-semibold; }
   </style>
 </head>
 <body class="bg-gray-100 p-6">
-  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6">
-    <h1 class="text-2xl font-bold mb-4 text-blue-700">Asset Maintenance Details</h1>
-
-    <!-- Tabs -->
-    <div class="flex space-x-6 border-b mb-4">
-      <button class="tab-btn tab-active" data-tab="asset">Asset Details</button>
-      <button class="tab-btn" data-tab="preventive">Preventive Maintenance</button>
-      <button class="tab-btn" data-tab="failure">Failure Analysis</button>
-      <button class="tab-btn" data-tab="inspection">Visual Inspection</button>
+  <div class="max-w-6xl mx-auto bg-white rounded-lg shadow p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div>
+      <h1 class="text-2xl font-bold mb-4 text-blue-700">Asset Maintenance Details</h1>
+      <div id="fields" class="space-y-2"></div>
+      <p id="err" class="text-red-600 mt-4 hidden"></p>
     </div>
 
-    <!-- Tab Content -->
-    <div id="tab-content">
-      <!-- Asset Details -->
-      <div id="asset" class="tab-pane">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <div id="fields" class="space-y-2"></div>
-            <p id="err" class="text-red-600 mt-4 hidden"></p>
-          </div>
-          <div class="border rounded overflow-hidden">
-            <div id="map"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Preventive Maintenance -->
-      <div id="preventive" class="tab-pane hidden">
-        <form class="space-y-4">
-          <h2 class="text-xl font-semibold text-blue-700">Preventive Maintenance Main Details</h2>
-          <div class="grid grid-cols-2 gap-4">
-            <label>Asset Number <input type="text" id="pm_asset" class="w-full border rounded p-2" readonly></label>
-            <label>Location <input type="text" id="pm_location" class="w-full border rounded p-2" readonly></label>
-            <label>Field <input type="text" id="pm_field" class="w-full border rounded p-2" readonly></label>
-            <label>Platform <input type="text" id="pm_platform" class="w-full border rounded p-2" readonly></label>
-            <label>Responsibility <input type="text" id="pm_resp" class="w-full border rounded p-2" readonly></label>
-            <label>Operations System <input type="text" id="pm_ops" class="w-full border rounded p-2" readonly></label>
-          </div>
-          <textarea placeholder="Maintenance Notes..." class="w-full border rounded p-2"></textarea>
-          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save Preventive Maintenance</button>
-        </form>
-      </div>
-
-      <!-- Failure Analysis -->
-      <div id="failure" class="tab-pane hidden">
-        <form class="space-y-4">
-          <h2 class="text-xl font-semibold text-blue-700">Failure Analysis Report</h2>
-          <div class="grid grid-cols-2 gap-4">
-            <label>Asset Number <input type="text" id="fa_asset" class="w-full border rounded p-2" readonly></label>
-            <label>Location <input type="text" id="fa_location" class="w-full border rounded p-2" readonly></label>
-            <label>Field <input type="text" id="fa_field" class="w-full border rounded p-2" readonly></label>
-            <label>Platform <input type="text" id="fa_platform" class="w-full border rounded p-2" readonly></label>
-            <label>Responsibility <input type="text" id="fa_resp" class="w-full border rounded p-2" readonly></label>
-            <label>Operations System <input type="text" id="fa_ops" class="w-full border rounded p-2" readonly></label>
-          </div>
-          <textarea placeholder="Failure Description..." class="w-full border rounded p-2"></textarea>
-          <textarea placeholder="Root Cause Analysis..." class="w-full border rounded p-2"></textarea>
-          <textarea placeholder="Corrective Actions..." class="w-full border rounded p-2"></textarea>
-          <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">Save Failure Report</button>
-        </form>
-      </div>
-
-      <!-- Visual Inspection -->
-      <div id="inspection" class="tab-pane hidden">
-        <form class="space-y-4">
-          <h2 class="text-xl font-semibold text-blue-700">Visual Inspection Checklist</h2>
-          <div class="grid grid-cols-2 gap-4">
-            <label>Asset Number <input type="text" id="vi_asset" class="w-full border rounded p-2" readonly></label>
-            <label>Location <input type="text" id="vi_location" class="w-full border rounded p-2" readonly></label>
-            <label>Field <input type="text" id="vi_field" class="w-full border rounded p-2" readonly></label>
-            <label>Platform <input type="text" id="vi_platform" class="w-full border rounded p-2" readonly></label>
-            <label>Responsibility <input type="text" id="vi_resp" class="w-full border rounded p-2" readonly></label>
-            <label>Operations System <input type="text" id="vi_ops" class="w-full border rounded p-2" readonly></label>
-          </div>
-          <div class="space-y-2">
-            <label><input type="checkbox"> No leaks observed</label>
-            <label><input type="checkbox"> No corrosion</label>
-            <label><input type="checkbox"> Labels and serials visible</label>
-            <label><input type="checkbox"> Safety guards intact</label>
-          </div>
-          <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Save Inspection Checklist</button>
-        </form>
-      </div>
+    <div class="border rounded overflow-hidden">
+      <div id="map"></div>
     </div>
   </div>
 
   <script>
-    // Tab switching
-    const tabs = document.querySelectorAll('.tab-btn');
-    const panes = document.querySelectorAll('.tab-pane');
-    tabs.forEach(btn => {
-      btn.addEventListener('click', () => {
-        tabs.forEach(b => b.classList.remove('tab-active'));
-        btn.classList.add('tab-active');
-        panes.forEach(p => p.classList.add('hidden'));
-        document.getElementById(btn.dataset.tab).classList.remove('hidden');
-      });
-    });
-
     function getParam(name) {
       return new URLSearchParams(window.location.search).get(name);
     }
@@ -126,7 +39,7 @@
       try {
         const dataObj = JSON.parse(decodeURIComponent(encoded));
 
-        // render asset details
+        // render all key/value pairs in two-column rows
         for (const [k, v] of Object.entries(dataObj)) {
           const row = document.createElement('div');
           row.className = 'grid grid-cols-2 gap-4 p-2 bg-gray-50 rounded';
@@ -139,21 +52,6 @@
           row.appendChild(label);
           row.appendChild(value);
           fieldsDiv.appendChild(row);
-        }
-
-        // populate forms with main asset data
-        const keys = {
-          asset: 'Asset Number',
-          location: 'Location',
-          field: 'Field',
-          platform: 'Platform',
-          resp: 'Responsibility',
-          ops: 'Operations System'
-        };
-        for (const [suffix, key] of Object.entries(keys)) {
-          document.getElementById(`pm_${suffix}`).value = dataObj[key] || '';
-          document.getElementById(`fa_${suffix}`).value = dataObj[key] || '';
-          document.getElementById(`vi_${suffix}`).value = dataObj[key] || '';
         }
 
         // show map if coords exists (key name "Coords")
