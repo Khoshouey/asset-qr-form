@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>بطاقة بيانات</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background: #f4f6f8; font-family: "Segoe UI", sans-serif; direction: rtl; }
+  .nameplate {
+    max-width: 800px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    position: relative;
+  }
+  .logo {
+    position: absolute;
+    top: 20px;
+    left: 20px; /* top right in RTL */
+  }
+  .fields-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 60px; /* space for logo */
+  }
+  .field {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #e0f2fe;
+    border-radius: 6px;
+    font-weight: 500;
+  }
+  .field-label { color: #0369a1; font-weight: 600; }
+  .field-value { color: #111; font-weight: 700; cursor: pointer; }
+  .error { text-align:center; color:red; font-weight:bold; margin-top:20px; }
+</style>
+</head>
+<body>
+
+<div class="nameplate">
+  <!-- Logo -->
+  <div class="logo" id="logo-container"></div>
+
+  <!-- Fields container -->
+  <div id="fields-container" class="fields-grid"></div>
+</div>
+
+<script>
+const fieldsContainer = document.getElementById("fields-container");
+const logoContainer = document.getElementById("logo-container");
+
+// Get QR-scanned data
+const params = new URLSearchParams(window.location.search);
+const rawData = params.get("data");
+const logoUrl = params.get("logo"); // optional logo
+
+if (logoUrl) {
+  const img = document.createElement("img");
+  img.src = decodeURIComponent(logoUrl);
+  img.alt = "Logo";
+  img.style.height = "60px";
+  logoContainer.appendChild(img);
+}
+
+if (!rawData) {
+  fieldsContainer.innerHTML = '<div class="error">❌ البيانات غير موجودة.</div>';
+} else {
+  try {
+    const dataObj = JSON.parse(decodeURIComponent(rawData));
+    for (const [label, value] of Object.entries(dataObj)) {
+      const fieldDiv = document.createElement("div");
+      fieldDiv.className = "field";
+
+      // Special handling for phone number
+      if (label.includes("هاتف") || label.toLowerCase().includes("phone")) {
+        const spanLabel = `<span class="field-label">${label}</span>`;
+        const spanValue = `<span class="field-value" onclick="copyPhone('${value}')">${value}</span>`;
+        fieldDiv.innerHTML = spanLabel + spanValue;
+      } else {
+        fieldDiv.innerHTML = `<span class="field-label">${label}</span><span class="field-value">${value}</span>`;
+      }
+
+      fieldsContainer.appendChild(fieldDiv);
+    }
+  } catch (e) {
+    fieldsContainer.innerHTML = '<div class="error">❌ صيغة البيانات غير صحيحة.</div>';
+  }
+}
+
+// Copy phone number to clipboard
+function copyPhone(number) {
+  navigator.clipboard.writeText(number).then(() => {
+    alert("📋 تم نسخ رقم الهاتف: " + number);
+  });
+}
+</script>
+
+</body>
+</html>
