@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Asset Details</title>
 
-<!-- PapaParse for CSV -->
+<!-- CSV Parser -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <style>
@@ -13,7 +13,6 @@ body {
   background: #f4f6f8;
   margin: 0;
   padding: 0;
-  text-align: center;
 }
 
 .container {
@@ -25,31 +24,8 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* Header */
-h1 {
-  text-align: center;
-  color: #0077b6;
-}
+h1 { text-align:center; color:#0077b6; }
 
-/* QR input */
-#qrInput {
-  width: 80%;
-  padding: 8px;
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-
-button {
-  padding: 8px 15px;
-  font-weight: bold;
-  cursor: pointer;
-  background: #0077b6;
-  color: white;
-  border: none;
-  border-radius: 5px;
-}
-
-/* Asset fields */
 .fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -65,18 +41,10 @@ button {
   justify-content: space-between;
 }
 
-.label {
-  color: #555;
-}
+.label { color: #555; }
+.value { font-weight: bold; }
 
-.value {
-  font-weight: bold;
-}
-
-/* Tabs */
-.tabs-container {
-  margin-top: 30px;
-}
+.tabs-container { margin-top: 30px; }
 
 .tabs {
   text-align: center;
@@ -98,22 +66,17 @@ button {
   color: white;
 }
 
-/* Tasks */
 .task {
   background: #ffffff;
   border-left: 4px solid #0077b6;
   margin: 6px 0;
   padding: 10px;
   border-radius: 6px;
-  word-wrap: break-word;
 }
-
-/* Error */
 .error {
   color: red;
   text-align: center;
   font-weight: bold;
-  margin-top: 20px;
 }
 </style>
 </head>
@@ -124,16 +87,12 @@ button {
 
   <h1>Asset Details</h1>
 
-  <!-- QR Code Input -->
-  <input id="qrInput" placeholder="Paste scanned QR code here..." />
-  <button id="scanBtn">Load Asset</button>
-
   <!-- Asset Info -->
   <div id="asset-fields" class="fields"></div>
 
-  <!-- Job Plan Tabs -->
+  <!-- Tabs -->
   <div class="tabs-container">
-    <h2>Job Plan Tasks</h2>
+    <h2 style="text-align:center;">Job Plan Tasks</h2>
 
     <div class="tabs">
       <button class="tab active" onclick="openTab('monthly', this)">Monthly</button>
@@ -147,60 +106,75 @@ button {
 </div>
 
 <script>
-// Parse QR text into key-value pairs
-function parseQRData(text) {
-  const lines = text.split(/\r?\n/);
-  const asset = {};
-  lines.forEach(line => {
-    const [key, ...rest] = line.split(':');
-    if (key && rest.length > 0) asset[key.trim()] = rest.join(':').trim();
-  });
-  return asset;
+
+// ✅ 1. READ QR DATA FROM URL
+const params = new URLSearchParams(window.location.search);
+const dataParam = params.get("data");
+
+const container = document.getElementById("asset-fields");
+
+let asset = null;
+
+// ✅ 2. PARSE DATA
+if (!dataParam) {
+  container.innerHTML = `<div class="error">No QR data found</div>`;
+} else {
+  try {
+    asset = JSON.parse(decodeURIComponent(dataParam));
+
+    for (const [key, value] of Object.entries(asset)) {
+      container.innerHTML += `
+        <div class="field">
+          <span class="label">${key}</span>
+          <span class="value">${value}</span>
+        </div>
+      `;
+    }
+
+  } catch (e) {
+    container.innerHTML = `<div class="error">Invalid QR data</div>`;
+  }
 }
 
-// Load CSV from GitHub based on Job Plan name
-async function loadJobPlanCSV(jobPlanName) {
-  const csvURL = `https://raw.githubusercontent.com/Khoshouey/asset-jobplans/refs/heads/main/${jobPlanName}.csv`; 
-  // <-- Replace <username>/<repo> with your GitHub info
-  const response = await fetch(csvURL);
-  const csvText = await response.text();
-  const data = Papa.parse(csvText, { header: true }).data;
-  return data.map(row => ({ id: row.TaskID, text: row.TaskDescription }));
+// ✅ 3. LOAD CSV FROM YOUR GITHUB
+async function loadCSV(fileName) {
+  const baseURL = "https://raw.githubusercontent.com/Khoshouey/asset-jobplans/main/";
+  const url = baseURL + fileName + ".csv";
+
+  const response = await fetch(url);
+  const text = await response.text();
+
+  const data = Papa.parse(text, { header: true }).data;
+
+  return data.map(row => ({
+    id: row.TaskID,
+    text: row.TaskDescription
+  }));
 }
 
-// Tab function
+// ✅ 4. TAB FUNCTION
 async function openTab(tabName, el) {
-  const container = document.getElementById("tab-content");
+
   document.querySelectorAll(".tab").forEach(btn => btn.classList.remove("active"));
   el.classList.add("active");
 
-  // Determine job plan CSV file
-  let jobPlanCSV = "";
-  if (tabName === "monthly") jobPlanCSV = "PUMP-1";
-  else if (tabName === "3months") jobPlanCSV = "PUMP-3";
-  else if (tabName === "6months") jobPlanCSV = "PUMP-6";
+  let file = "PUMP-1"; // default
 
-  const tasks = await loadJobPlanCSV(jobPlanCSV);
+  if (tabName === "monthly") file = "PUMP-1";
+  if (tabName === "3months") file = "PUMP-3";
+  if (tabName === "6months") file = "PUMP-6";
 
-  container.innerHTML = tasks.map(t => `<div class="task"><b>${t.id}</b> - ${t.text}</div>`).join("");
+  const tasks = await loadCSV(file);
+
+  document.getElementById("tab-content").innerHTML =
+    tasks.map(t => `<div class="task"><b>${t.id}</b> - ${t.text}</div>`).join("");
 }
 
-// When user scans QR
-document.getElementById("scanBtn").addEventListener("click", async () => {
-  const qrText = document.getElementById("qrInput").value.trim();
-  if (!qrText) return alert("Please paste scanned QR text!");
-
-  const asset = parseQRData(qrText);
-  const container = document.getElementById("asset-fields");
-  container.innerHTML = "";
-
-  for (const [key,value] of Object.entries(asset)) {
-    container.innerHTML += `<div class="field"><span class="label">${key}</span><span class="value">${value}</span></div>`;
-  }
-
-  // Show default Monthly tab
+// ✅ 5. AUTO LOAD MONTHLY TAB
+window.onload = () => {
   openTab('monthly', document.querySelector(".tab.active"));
-});
+};
+
 </script>
 
 </body>
