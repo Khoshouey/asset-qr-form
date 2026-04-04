@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Asset Details</title>
+<style>
+body { font-family: Tahoma, sans-serif; background: #f4f6f8; margin:0; padding:0; }
+.container { max-width: 900px; margin: 20px auto; background:#fff; border-radius:10px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1);}
+h1 { text-align:center; color:#0077b6; }
+.fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px;}
+.field { background:#f0f0f0; padding:8px 10px; border-radius:6px; display:flex; justify-content:space-between;}
+.label { color:#555; } .value { font-weight:bold; }
+.tabs-container { margin-top:30px; }
+.tabs { text-align:center; margin-bottom:10px; }
+.tab { padding:8px 15px; margin:3px; border:none; background:#ccc; cursor:pointer; border-radius:5px; font-weight:bold; }
+.tab.active { background:#0077b6; color:white; }
+.task { background:#fff; border-left:4px solid #0077b6; margin:6px 0; padding:10px; border-radius:6px; }
+.error { color:red; text-align:center; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Asset Details</h1>
+  <div id="asset-fields" class="fields"></div>
+
+  <div class="tabs-container">
+    <h2 style="text-align:center;">Job Plan Tasks</h2>
+    <div class="tabs">
+      <button class="tab active" onclick="openTab('monthly', this)">Monthly</button>
+      <button class="tab" onclick="openTab('3months', this)">3 Months</button>
+      <button class="tab" onclick="openTab('6months', this)">6 Months</button>
+    </div>
+    <div id="tab-content"></div>
+  </div>
+</div>
+
+<script>
+// ✅ ASSETS DATABASE
+const assetsDB = {
+  "16060": {
+    "AssetID": "16060",
+    "Asset": "Crude Oil Pump Package No 5",
+    "Location": "RBKR-P-7330",
+    "Reported By": "PMGEN",
+    "Priority": "3",
+    "Work Type": "PM",
+    "Status": "WSCHED",
+    "Job Plan": "PUMP-1",
+    "Frequency": "6 Months"
+  }
+};
+
+// ✅ JOB PLAN DATA
+const jobPlans = {
+  monthly: [
+    {id:10, text:"Stop The Engine And Do All Safety Precautions, Lifting Procedure and Isolation Procedure"},
+    {id:20, text:"Change Oil, Oil Filters"},
+    {id:30, text:"Clean Air Filter Elements, Replace If Needed And Check Turbochargers End Play"},
+    {id:40, text:"Check Ignition System"},
+    {id:50, text:"Check Fuel System"},
+    {id:60, text:"Check Starting System and Replace If Needed (Weight About 25 Kg)"},
+    {id:70, text:"Check Exhaust System"},
+    {id:80, text:"Check Actuator Levers Easy To Move, Length And Angels, Grease Lever Rod End Bearing"},
+    {id:90, text:"Check Cooling System"},
+    {id:100, text:"Check all Switches And Replace If Needed"},
+    {id:110, text:"Remove Isolation and Start-Up The Engine"},
+    {id:120, text:"Tuning Up The Engine And Check All Switche's Reading"}
+   ],
+  "3months": [
+   {id:10, text:"Stop The Engine And Do All Safety Precautions, Lifting Procedure and Isolation Procedure"},
+    {id:20, text:"Change Oil, Oil Filters"},
+    {id:30, text:"Clean Air Filter Elements, Replace If Needed And Check Turbochargers End Play"},
+    {id:40, text:"Check Ignition System"},
+     {id:60, text:"Check Starting System and Replace If Needed (Weight About 25 Kg)"},
+    {id:70, text:"Check Exhaust System"},
+    {id:80, text:"Check Actuator Levers Easy To Move, Length And Angels, Grease Lever Rod End Bearing"},
+    {id:90, text:"Check Cooling System"},
+    {id:100, text:"Check all Switches And Replace If Needed"},
+    {id:110, text:"Remove Isolation and Start-Up The Engine"},
+    {id:120, text:"Tuning Up The Engine And Check All Switche's Reading"},
+    {id:130, text:"Check and inspect the lube oil supply and return lines for turbocharger"},
+    {id:140, text:"Check the turbocharger lube oil tubes supports are in place"},
+    {id:150, text:"Check Engine Cylinders Compression Test"},
+    {id:160, text:"Inspect flex master coupling for sign of severe corrosion, damage or leakage"}
+  ],
+  "6months": [
+    {id:10, text:"Stop The Engine And Do All Safety Precautions,Lifting Procedure and Isolation Procedure"},
+    {id:20, text:"Change Oil, Oil Filters"},
+    {id:30, text:"Clean Air Filter Elements,Replace If Needed And Check Turbochargers End Play"},
+    {id:40, text:"Check Ignition System (Important Read The Long Description)"},
+    {id:50, text:"Check Fuel System"},
+    {id:60, text:"Check Starting System and Replace If Needed (Weight About 25 Kg)"},
+    {id:70, text:"Check Exhaust System"},
+    {id:80, text:"Check Actuator Levers Easy To Move, Length And Angels, Grease Lever Rod End Bearing"},
+    {id:90, text:"Check Cooling System"},
+    {id:100, text:"Check all Switches And Replace If Needed"},
+    {id:110, text:"Remove Isolation and Start-Up The Engine"},
+    {id:120, text:"Tuning Up The Engine And Check All Switche's Reading"},
+    {id:130, text:"Check and inspect the lube oil supply and return lines for turbocharger"},
+    {id:140, text:"Check the turbocharger lube oil tubes supports are in place"},
+    {id:150, text:"Check Engine Cylinders Compression Test"},
+    {id:160, text:"Inspect flex master coupling for sign of severe corrosion, damage or leakage"},
+    {id:180, text:"Replace Cylinder Head (80 kg), Piston (40 kg) And Liner If Needed"},
+    {id:190, text:"Check Exhaust System"},
+    {id:200, text:"Check Actuator Levers Easy To Move, Length And Angels, Grease Lever Rod End Bearing"},
+    {id:210, text:"Check Cooling System"},
+    {id:220, text:"Remove Isolation and Start-Up The Engine"},
+    {id:230, text:"Tuning Up The Engine And Check All Switche's Reading"}
+  ]
+};
+
+
+// ✅ TAB FUNCTION
+function openTab(tabName, el) {
+  document.querySelectorAll(".tab").forEach(btn => btn.classList.remove("active"));
+  el.classList.add("active");
+  const tasks = jobPlans[tabName] || [];
+  document.getElementById("tab-content").innerHTML =
+    tasks.map(t => `<div class="task"><b>${t.id}</b> - ${t.text}</div>`).join("");
+}
+
+// ✅ GET ASSETID FROM URL
+const params = new URLSearchParams(window.location.search);
+const assetId = params.get("id");
+const container = document.getElementById("asset-fields");
+
+if (!assetId || !assetsDB[assetId]) {
+  container.innerHTML = `<div class="error">Asset not found</div>`;
+} else {
+  const asset = assetsDB[assetId];
+  for (const [key, value] of Object.entries(asset)) {
+    container.innerHTML += `<div class="field"><span class="label">${key}</span><span class="value">${value}</span></div>`;
+  }
+  // Show Monthly tab by default
+  openTab('monthly', document.querySelector(".tab.active"));
+}
+</script>
+
+</body>
+</html>
