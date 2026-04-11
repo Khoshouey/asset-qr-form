@@ -34,6 +34,24 @@
   .field-label { color: #555; }
   .field-value { color: #111; font-weight: 700; }
   .error { text-align:center; color:red; font-weight:bold; margin-top:20px; }
+  .tabs {
+    display: flex;
+    justify-content: space-around;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 20px;
+  }
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .tab:hover {
+    background: #f0f0f0;
+  }
+  .active-tab {
+    border-bottom: 2px solid #007bff;
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
@@ -42,6 +60,15 @@
   <!-- CAT Logo -->
   <div class="logo">
     <img src="https://custom-images.strikinglycdn.com/res/hrscywv4p/image/upload/c_limit,fl_lossy,h_9000,w_1200,f_auto,q_auto/13000668/570950_156125.png" alt="Caterpillar Logo" style="height:50px;">
+  </div>
+
+  <!-- Tabs container -->
+  <div class="tabs">
+    <div class="tab active-tab" onclick="showTab('monthly')">Monthly</div>
+    <div class="tab" onclick="showTab('3months')">3 Months</div>
+    <div class="tab" onclick="showTab('6months')">6 Months</div>
+    <div class="tab" onclick="showTab('yearly')">Yearly</div>
+    <div class="tab" onclick="showTab('bom')">Bill Of Materials</div>
   </div>
 
   <!-- Fields container -->
@@ -70,6 +97,11 @@ if (!rawData) {
   } catch (e) {
     fieldsContainer.innerHTML = '<div class="error">Invalid data format.</div>';
   }
+}
+
+function showTab(tabName) {
+  // Logic to handle tab switching can be added here
+  alert(`Showing ${tabName} tab`);
 }
 </script>
 
