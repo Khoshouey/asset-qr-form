@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body{font-family:Arial;margin:0;display:flex;height:100vh;background:#f4f6f9}
+.sidebar{width:30%;padding:15px;background:#ecf0f1;overflow:auto}
+.main{flex:1;padding:15px}
+.kpi{background:#fff;margin:8px 0;padding:10px;border-radius:6px}
+label{display:block;margin-top:8px;font-weight:bold}
+button{margin-top:8px;padding:6px;border:0;background:#3498db;color:#fff;border-radius:5px}
+select,input{width:100%;margin:5px 0;padding:5px}
+.tab-buttons{display:flex;gap:6px;margin-bottom:10px}
+.tab-content{display:none;height:80vh}
+.tab-content.active{display:block}
+canvas{width:100%!important;height:100%!important;background:#fff;border-radius:6px}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<h3>📊 Dashboard</h3>
+
+<label>Upload</label><input type="file" id="upload">
+<label>X Column</label><select id="x"></select>
+<label>Y Column</label><select id="y"></select>
+<label>Start</label><input type="date" id="s">
+<label>End</label><input type="date" id="e">
+
+<button id="filter">Apply</button>
+<div id="kpis"></div>
+</div>
+
+<div class="main">
+<div class="tab-buttons">
+<button onclick="tab('bar')">Bar</button>
+<button onclick="tab('pie')">Pie</button>
+<button onclick="tab('line')">Line</button>
+<button onclick="tab('scatter')">Scatter</button>
+</div>
+
+<div id="bar" class="tab-content"><canvas id="barChart"></canvas></div>
+<div id="pie" class="tab-content"><canvas id="pieChart"></canvas></div>
+<div id="line" class="tab-content"><canvas id="lineChart"></canvas></div>
+<div id="scatter" class="tab-content"><canvas id="scatterChart"></canvas></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let data=[],charts={};
+
+upload.onchange=e=>{
+ const r=new FileReader();
+ r.onload=x=>{
+  const wb=XLSX.read(new Uint8Array(x.target.result),{type:'array'});
+  data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+  const cols=Object.keys(data[0]||{});
+  ['x','y'].forEach(id=>$(id).innerHTML=cols.map(c=>`<option>${c}</option>`));
+  update(); tab('bar');
+ };
+ r.readAsArrayBuffer(e.target.files[0]);
+};
+
+filter.onclick=update;
+
+function tab(id){
+ document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+ $(id).classList.add('active');
+}
+
+function excelDate(v){
+ return (!v||isNaN(v))?null:new Date((Math.floor(v-25569))*86400*1000);
+}
+
+function update(){
+ const x=$('x').value,y=$('y').value;
+ if(!x||!y||!data.length)return;
+
+ const s=$('s').value,e=$('e').value;
+
+ let d=data.filter(r=>{
+  const dt=excelDate(Number(r.Date||r.date||r.DATE));
+  return (!s||!dt||dt>=new Date(s))&&(!e||!dt||dt<=new Date(e));
+ });
+
+ const num=!isNaN(Number(d.find(r=>r[y]!=null)?.[y]));
+ const g={};
+ d.forEach(r=>g[r[x]]=(g[r[x]]||0)+(num?+r[y]||0:1));
+
+ const labels=Object.keys(g),vals=Object.values(g);
+ const total=vals.reduce((a,b)=>a+b,0);
+ const avg=(vals.length?total/vals.length:0).toFixed(2);
+
+ kpis.innerHTML=`
+ <div class=kpi><b>${total}</b><br>${num?'Total '+y:'Count'}</div>
+ <div class=kpi><b>${vals.length}</b><br>Groups</div>
+ <div class=kpi><b>${avg}</b><br>Avg</div>`;
+
+ Object.values(charts).forEach(c=>c&&c.destroy());
+
+ charts.bar=new Chart(barChart,{type:'bar',
+  data:{labels,datasets:[{label:num?`Sum of ${y}`:`Count`,data:vals,backgroundColor:'#3498db'}]},
+  options:{responsive:true,maintainAspectRatio:false}});
+
+ charts.pie=new Chart(pieChart,{type:'pie',
+  data:{labels,datasets:[{data:vals,
+   backgroundColor:['#1abc9c','#e67e22','#2980b9','#8e44ad','#c0392b','#f1c40f','#2ecc71','#d35400']
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right'}}}});
+
+ charts.line=new Chart(lineChart,{type:'line',
+  data:{labels,datasets:[{label:num?`Sum of ${y}`:`Count`,data:vals,
+   borderColor:'#27ae60',backgroundColor:'rgba(39,174,96,0.2)',fill:true,tension:.3}]},
+  options:{responsive:true,maintainAspectRatio:false}});
+
+ charts.scatter=new Chart(scatterChart,{type:'scatter',
+  data:{datasets:[{label:`${x} vs ${y}`,data:labels.map((l,i)=>({x:l,y:vals[i]})),backgroundColor:'#e74c3c'}]},
+  options:{responsive:true,maintainAspectRatio:false,
+   scales:{x:{type:'category'},y:{}}}});
+}
+</script>
+
+</body>
+</html>
